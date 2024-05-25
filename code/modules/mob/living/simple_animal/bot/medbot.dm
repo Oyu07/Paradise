@@ -8,7 +8,7 @@
 	name = "\improper Medibot"
 	desc = "A little medical robot. He looks somewhat underwhelmed."
 	icon = 'icons/obj/aibots.dmi'
-	icon_state = "medibot0"
+	icon_state = "medibot"
 	density = FALSE
 	anchored = FALSE
 	health = 20
@@ -106,21 +106,20 @@
 	drops_parts = FALSE
 
 /mob/living/simple_animal/bot/medbot/update_icon_state()
-	if(!on)
-		icon_state = "medibot0"
-		return
-	if(mode == BOT_HEALING)
-		icon_state = "medibots[stationary_mode]"
-		return
-	else if(stationary_mode) //Bot has yellow light to indicate stationary mode.
-		icon_state = "medibot2"
-	else
-		icon_state = "medibot1"
+	return
 
 /mob/living/simple_animal/bot/medbot/update_overlays()
 	. = ..()
 	if(skin)
 		. += "medskin_[skin]"
+	if(mode == BOT_HEALING)
+		. += "_work[stationary_mode ? "_restrict" : null]"
+		return
+	if(on)
+		. += "_[stationary_mode ? "restrict" : "on"]"
+		return
+	. += "_off"
+
 
 /mob/living/simple_animal/bot/medbot/Initialize(mapload, new_skin)
 	. = ..()
@@ -131,7 +130,7 @@
 
 	if(new_skin)
 		skin = new_skin
-	update_icon()
+	update_icon(UPDATE_OVERLAYS)
 
 /mob/living/simple_animal/bot/medbot/bot_reset()
 	..()
@@ -140,14 +139,14 @@
 	oldloc = null
 	last_found = world.time
 	declare_cooldown = FALSE
-	update_icon()
+	update_icon(UPDATE_OVERLAYS)
 
 /mob/living/simple_animal/bot/medbot/proc/soft_reset() //Allows the medibot to still actively perform its medical duties without being completely halted as a hard reset does.
 	path = list()
 	patient = null
 	mode = BOT_IDLE
 	last_found = world.time
-	update_icon()
+	update_icon(UPDATE_OVERLAYS)
 
 /mob/living/simple_animal/bot/medbot/set_custom_texts()
 	text_hack = "You corrupt [name]'s reagent processor circuits."
@@ -231,7 +230,7 @@
 		if("toggle_stationary_mode")
 			stationary_mode = !stationary_mode
 			path = list()
-			update_icon()
+			update_icon(UPDATE_OVERLAYS)
 		if("eject_reagent_glass")
 			reagent_glass.forceMove(get_turf(src))
 			reagent_glass = null
@@ -319,7 +318,7 @@
 	if(patient && (get_dist(src,patient) <= 1)) //Patient is next to us, begin treatment!
 		if(mode != BOT_HEALING)
 			mode = BOT_HEALING
-			update_icon()
+			update_icon(UPDATE_OVERLAYS)
 			frustration = 0
 			medicate_patient(patient)
 		return
@@ -432,9 +431,9 @@
 		var/mob/living/carbon/C = A
 		patient = C
 		mode = BOT_HEALING
-		update_icon()
+		update_icon(UPDATE_OVERLAYS)
 		medicate_patient(C)
-		update_icon()
+		update_icon(UPDATE_OVERLAYS)
 	else
 		..()
 
@@ -501,7 +500,7 @@
 	else
 		visible_message("[src] retracts its syringe.")
 
-	update_icon()
+	update_icon(UPDATE_OVERLAYS)
 	soft_reset()
 
 /mob/living/simple_animal/bot/medbot/proc/check_overdose(mob/living/carbon/patient,reagent_id,injection_amount)

@@ -67,13 +67,13 @@
 /mob/living/simple_animal/bot/cleanbot/update_overlays()
 	. = ..()
 	if(!on)
-		. += "clean_off"
+		. += "_off"
 		return
 	if(mode == BOT_CLEANING)
-		. += "clean_brush"
-		. += "clean[area_locked ? "_restrict" : ""]_work"
+		. += "_brush"
+		. += "_work[area_locked ? "_restrict" : null]"
 		return
-	. += "clean_[area_locked ? "restrict" : "on"]"
+	. += "_[area_locked ? "restrict" : "on"]"
 
 /mob/living/simple_animal/bot/cleanbot/bot_reset()
 	..()
