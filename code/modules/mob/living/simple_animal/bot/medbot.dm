@@ -113,6 +113,7 @@
 	if(skin)
 		. += "medskin_[skin]"
 	if(mode == BOT_HEALING)
+		. += "medibot_work"
 		. += "_work[stationary_mode ? "_restrict" : null]"
 		return
 	if(on)
