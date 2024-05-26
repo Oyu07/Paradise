@@ -414,7 +414,7 @@
 	. = ..()
 	if(mode == BOT_REPAIRING || mode == BOT_EAT_TILE || mode == BOT_MAKE_TILE)
 		. += "_work"
-		. += "floorbot_work"
+		. += "floorbot_work_[amount > 0 ? "metal" : null]"
 	else
 		. += "_[on ? "on" : "off"]"
 		. += "_[amount > 0 ? "metal" : null]"
