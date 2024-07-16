@@ -2,7 +2,7 @@
 	name = "Automatic Robotic Factory 5000"
 	desc = "A large metallic machine with an entrance and an exit. A sign on the side reads, 'human go in, robot come out'. Has a cooldown between each use."
 	icon = 'icons/obj/recycling.dmi'
-	icon_state = "separator-AO1"
+	icon_state = "grinder-b1"
 	layer = MOB_LAYER+1 // Overhead
 	anchored = TRUE
 	density = TRUE
@@ -11,7 +11,7 @@
 	/// TRUE if the mob can be standing and still be transformed.
 	var/transform_standing = TRUE
 	/// Cooldown between each transformation, in deciseconds.
-	var/cooldown_duration = 1 MINUTES
+	var/cooldown_duration = 30 SECONDS
 	/// If the factory is currently on cooldown from its last transformation.
 	var/is_on_cooldown = FALSE
 	/// The type of cell that newly created borgs get.
@@ -38,21 +38,22 @@
 
 	// Get the turf 1 tile to the EAST.
 	var/turf/east = locate(T.x + 1, T.y, T.z)
-	if(istype(east, /turf/simulated/floor))
+	if(isfloorturf(east))
 		new /obj/machinery/conveyor/auto(east, WEST)
 
 	// Get the turf 1 tile to the WEST.
 	var/turf/west = locate(T.x - 1, T.y, T.z)
-	if(istype(west, /turf/simulated/floor))
+	if(isfloorturf(west))
 		new /obj/machinery/conveyor/auto(west, WEST)
 
 /obj/machinery/transformer/power_change()
-	..()
+	if(!..())
+		return
 	update_icon(UPDATE_ICON_STATE)
 
 /obj/machinery/transformer/update_icon_state()
 	if(is_on_cooldown || stat & (BROKEN|NOPOWER))
-		icon_state = "separator-AO0"
+		icon_state = "grinder-b0"
 	else
 		icon_state = initial(icon_state)
 
@@ -94,15 +95,17 @@
 	// Activate the cooldown
 	is_on_cooldown = TRUE
 	update_icon(UPDATE_ICON_STATE)
-	addtimer(CALLBACK(src, .proc/reset_cooldown), cooldown_duration)
-	addtimer(CALLBACK(null, .proc/playsound, loc, 'sound/machines/ping.ogg', 50, 0), 3 SECONDS)
+	addtimer(CALLBACK(src, PROC_REF(reset_cooldown)), cooldown_duration)
+	addtimer(CALLBACK(null, GLOBAL_PROC_REF(playsound), loc, 'sound/machines/ping.ogg', 50, 0), 3 SECONDS)
 
 	H.emote("scream")
 	if(!masterAI) // If the factory was placed via admin spawning or other means, it wont have an owner_AI.
-		H.Robotize(robot_cell_type)
+		var/mob/living/silicon/robot/R = H.Robotize(robot_cell_type)
+		R.emagged = TRUE
 		return
 
 	var/mob/living/silicon/robot/R = H.Robotize(robot_cell_type, FALSE, masterAI)
+	R.emagged = TRUE
 	if(R.mind && !R.client && !R.grab_ghost()) // Make sure this is an actual player first and not just a humanized monkey or something.
 		message_admins("[key_name_admin(R)] was just transformed by a borg factory, but they were SSD. Polling ghosts for a replacement.")
 		var/list/candidates = SSghost_spawns.poll_candidates("Do you want to play as a malfunctioning cyborg?", ROLE_TRAITOR, poll_time = 15 SECONDS)
@@ -110,6 +113,7 @@
 			return
 		var/mob/dead/observer/O = pick(candidates)
 		R.key = O.key
+		dust_if_respawnable(O)
 
 /obj/machinery/transformer/mime
 	name = "Mimetech Greyscaler"
@@ -141,7 +145,7 @@
 	// Activate the cooldown
 	is_on_cooldown = TRUE
 	update_icon(UPDATE_ICON_STATE)
-	addtimer(CALLBACK(src, .proc/reset_cooldown), cooldown_duration)
+	addtimer(CALLBACK(src, PROC_REF(reset_cooldown)), cooldown_duration)
 
 /obj/machinery/transformer/xray
 	name = "Automatic X-Ray 5000"
@@ -156,21 +160,22 @@
 
 		// Get the turf 2 tiles to the EAST.
 		var/turf/east2 = locate(T.x + 2, T.y, T.z)
-		if(istype(east2, /turf/simulated/floor))
+		if(isfloorturf(east2))
 			new /obj/machinery/conveyor/auto(east2, EAST)
 
 		// Get the turf 2 tiles to the WEST.
 		var/turf/west2 = locate(T.x - 2, T.y, T.z)
-		if(istype(west2, /turf/simulated/floor))
+		if(isfloorturf(west2))
 			new /obj/machinery/conveyor/auto(west2, EAST)
 
 /obj/machinery/transformer/xray/power_change()
-	..()
+	if(!..())
+		return
 	update_icon(UPDATE_ICON_STATE)
 
 /obj/machinery/transformer/xray/update_icon_state()
 	if(stat & (BROKEN|NOPOWER))
-		icon_state = "separator-AO0"
+		icon_state = "grinder-b0"
 	else
 		icon_state = initial(icon_state)
 
@@ -196,7 +201,7 @@
 	if(stat & (BROKEN|NOPOWER))
 		return
 
-	flick("separator-AO0",src)
+	flick("grinder-b0",src)
 	playsound(loc, 'sound/effects/alert.ogg', 50, 0)
 	sleep(5)
 	H.rad_act(rand(150, 200))
@@ -212,13 +217,13 @@
 /obj/machinery/transformer/xray/proc/scan(obj/item/I)
 	if(scan_rec(I))
 		playsound(loc, 'sound/effects/alert.ogg', 50, 0)
-		flick("separator-AO0",src)
+		flick("grinder-b0",src)
 	else
 		playsound(loc, 'sound/machines/ping.ogg', 50, 0)
 		sleep(30)
 
 /obj/machinery/transformer/xray/proc/scan_rec(obj/item/I)
-	if(istype(I, /obj/item/gun))
+	if(isgun(I))
 		return TRUE
 	if(istype(I, /obj/item/transfer_valve))
 		return TRUE
@@ -248,7 +253,7 @@
 
 	if(prestrip)
 		for(var/obj/item/I in H)
-			if(istype(I, /obj/item/implant))
+			if(istype(I, /obj/item/bio_chip))
 				continue
 			qdel(I)
 

@@ -21,7 +21,7 @@
 		wormholes += new /obj/effect/portal/wormhole(T, null, null, -1)
 
 /datum/event/wormholes/announce()
-	GLOB.event_announcement.Announce("Space-time anomalies detected on the station. There is no additional data.", "Anomaly Alert", new_sound = 'sound/AI/spanomalies.ogg')
+	GLOB.minor_announcement.Announce("Space-time anomalies detected on the station. There is no additional data.", "Anomaly Alert", new_sound = 'sound/AI/spanomalies.ogg')
 
 /datum/event/wormholes/tick()
 	if(activeFor % shift_frequency == 0)
@@ -37,7 +37,7 @@
 /obj/effect/portal/wormhole
 	name = "wormhole"
 	desc = "It looks highly unstable; It could close at any moment."
-	icon = 'icons/obj/objects.dmi'
+	icon = 'icons/effects/effects.dmi'
 	icon_state = "anom"
 	failchance = 0
 
@@ -52,7 +52,7 @@
 		return FALSE
 
 	var/turf/target
-	if(GLOB.portals.len)
+	if(length(GLOB.portals))
 		var/obj/effect/portal/P = pick(GLOB.portals)
 		if(P && isturf(P.loc))
 			target = P.loc

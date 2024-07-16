@@ -8,7 +8,7 @@
 	icon = 'icons/obj/doors/mineral_doors.dmi'
 	icon_state = "metal"
 	max_integrity = 200
-	armor = list(MELEE = 10, BULLET = 0, LASER = 0, ENERGY = 100, BOMB = 10, BIO = 100, RAD = 100, FIRE = 50, ACID = 50)
+	armor = list(MELEE = 10, BULLET = 0, LASER = 0, ENERGY = 100, BOMB = 10, RAD = 100, FIRE = 50, ACID = 50)
 	flags_2 = RAD_PROTECT_CONTENTS_2 | RAD_NO_CONTAMINATE_2
 	rad_insulation = RAD_MEDIUM_INSULATION
 	var/initial_state
@@ -19,18 +19,19 @@
 	var/hardness = 1
 	var/sheetType = /obj/item/stack/sheet/metal
 	var/sheetAmount = 7
-	var/openSound = 'sound/effects/stonedoor_openclose.ogg'
-	var/closeSound = 'sound/effects/stonedoor_openclose.ogg'
+	var/open_sound = 'sound/effects/stonedoor_openclose.ogg'
+	var/close_sound = 'sound/effects/stonedoor_openclose.ogg'
 	var/damageSound = null
 
 /obj/structure/mineral_door/Initialize()
 	. = ..()
 	initial_state = icon_state
-	air_update_turf(1)
+	recalculate_atmos_connectivity()
+	AddComponent(/datum/component/debris, DEBRIS_SPARKS, -20, 10)
 
 /obj/structure/mineral_door/Destroy()
 	density = FALSE
-	air_update_turf(1)
+	recalculate_atmos_connectivity()
 	return ..()
 
 /obj/structure/mineral_door/Move()
@@ -61,7 +62,7 @@
 		return !opacity
 	return !density
 
-/obj/structure/mineral_door/CanAtmosPass(turf/T)
+/obj/structure/mineral_door/CanAtmosPass(direction)
 	return !density
 
 /obj/structure/mineral_door/proc/try_to_operate(atom/user)
@@ -69,8 +70,6 @@
 		return
 	if(isliving(user))
 		var/mob/living/M = user
-		if(world.time - user.last_bumped <= 60)
-			return //NOTE do we really need that?
 		if(M.client)
 			if(iscarbon(M))
 				var/mob/living/carbon/C = M
@@ -78,30 +77,33 @@
 					operate()
 			else
 				operate()
-	else if(istype(user, /obj/mecha))
+	else if(ismecha(user))
 		operate()
 
 /obj/structure/mineral_door/proc/operate()
 	is_operating = TRUE
 	if(!state_open)
-		playsound(loc, openSound, 100, 1)
+		playsound(loc, open_sound, 100, TRUE)
 		flick("[initial_state]opening",src)
 	else
 		var/turf/T = get_turf(src)
 		for(var/mob/living/L in T)
+			is_operating = FALSE
 			return
-		playsound(loc, closeSound, 100, 1)
+		playsound(loc, close_sound, 100, TRUE)
 		flick("[initial_state]closing",src)
-	sleep(10)
+	addtimer(CALLBACK(src, PROC_REF(operate_update)), 1 SECONDS)
+
+/obj/structure/mineral_door/proc/operate_update()
 	density = !density
 	opacity = !opacity
 	state_open = !state_open
-	air_update_turf(1)
+	recalculate_atmos_connectivity()
 	update_icon(UPDATE_ICON_STATE)
 	is_operating = FALSE
 
 	if(state_open && close_delay != -1)
-		addtimer(CALLBACK(src, .proc/operate), close_delay)
+		addtimer(CALLBACK(src, PROC_REF(operate)), close_delay)
 
 /obj/structure/mineral_door/update_icon_state()
 	if(state_open)
@@ -163,9 +165,12 @@
 	opacity = FALSE
 	rad_insulation = RAD_VERY_LIGHT_INSULATION
 
-/obj/structure/mineral_door/transparent/operate()
-	..()
-	set_opacity(0)
+/obj/structure/mineral_door/transparent/operate_update()
+	density = !density
+	state_open = !state_open
+	recalculate_atmos_connectivity()
+	update_icon(UPDATE_ICON_STATE)
+	is_operating = FALSE
 
 /obj/structure/mineral_door/transparent/plasma
 	name = "plasma door"
@@ -173,8 +178,8 @@
 	sheetType = /obj/item/stack/sheet/mineral/plasma
 
 /obj/structure/mineral_door/transparent/plasma/attackby(obj/item/W, mob/user)
-	if(is_hot(W))
-		message_admins("Plasma mineral door ignited by [key_name_admin(user)] in ([x], [y], [z] - <A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)", 0, 1)
+	if(W.get_heat())
+		message_admins("Plasma mineral door ignited by [key_name_admin(user)] in ([x], [y], [z] - <a href='byond://?_src_=holder;adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)", 0, 1)
 		log_game("Plasma mineral door ignited by [key_name(user)] in ([x], [y], [z])")
 		investigate_log("was <font color='red'><b>ignited</b></font> by [key_name(user)]","atmos")
 		TemperatureAct(100)
@@ -200,24 +205,14 @@
 /obj/structure/mineral_door/wood
 	name = "wood door"
 	icon_state = "wood"
-	openSound = 'sound/effects/doorcreaky.ogg'
-	closeSound = 'sound/effects/doorcreaky.ogg'
+	open_sound = 'sound/effects/doorcreaky.ogg'
+	close_sound = 'sound/effects/doorcreaky.ogg'
 	sheetType = /obj/item/stack/sheet/wood
 	hardness = 1
 	resistance_flags = FLAMMABLE
 	max_integrity = 200
 	rad_insulation = RAD_VERY_LIGHT_INSULATION
 
-/obj/structure/mineral_door/resin
-	name = "resin door"
-	icon_state = "resin"
-	hardness = 1.5
-	close_delay = 100
-	openSound = 'sound/effects/attackblob.ogg'
-	closeSound = 'sound/effects/attackblob.ogg'
-	damageSound = 'sound/effects/attackblob.ogg'
-	sheetType = null
-
-/obj/structure/mineral_door/resin/try_to_operate(atom/user)
-	if(isalien(user))
-		return ..()
+/obj/structure/mineral_door/wood/Initialize()
+	. = ..()
+	AddComponent(/datum/component/debris, DEBRIS_WOOD, -20, 10)

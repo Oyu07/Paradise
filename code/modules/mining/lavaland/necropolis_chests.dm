@@ -24,7 +24,7 @@
 		if(4)
 			new /obj/item/organ/internal/cyberimp/arm/katana(src)
 		if(5)
-			new /obj/item/clothing/glasses/godeye(src)
+			new /obj/item/book_of_babel(src)
 		if(6)
 			new /obj/item/pickaxe/diamond(src)
 		if(7)
@@ -61,27 +61,26 @@
 		if(19)
 			new /obj/item/gun/magic/hook(src)
 		if(20)
-			new /obj/item/grenade/clusterbuster/inferno(src)
+			new /obj/item/reagent_containers/drinks/everfull(src)
 		if(21)
-			new /obj/item/reagent_containers/food/drinks/bottle/holywater/hell(src)
+			new /obj/item/reagent_containers/drinks/bottle/holywater/hell(src)
 		if(22)
 			new /obj/item/spellbook/oneuse/summonitem(src)
 		if(23)
-			new /obj/item/book_of_babel(src)
-		if(24)
 			new /obj/item/borg/upgrade/modkit/lifesteal(src)
 			new /obj/item/bedsheet/cult(src)
-
-/obj/structure/closet/crate/necropolis/puzzle
-	name = "puzzling chest"
-
-/obj/structure/closet/crate/necropolis/puzzle/populate_contents()
-	var/loot = rand(1,2)
-	switch(loot)
-		if(1)
-			new /obj/item/soulstone/anybody(src)
-		if(2)
-			new /obj/item/wisp_lantern(src)
+		if(24)
+			switch(rand(1, 11))
+				if(1)
+					new /obj/item/blank_tarot_card(src)
+				if(2 to 5)
+					new /obj/item/tarot_card_pack(src)
+				if(6 to 8)
+					new /obj/item/tarot_card_pack/jumbo(src)
+				if(9, 10)
+					new /obj/item/tarot_card_pack/mega(src)
+				if(11)
+					new /obj/item/tarot_generator(src) // ~1/250? Seems reasonable
 
 //KA modkit design discs
 /obj/item/disk/design_disk/modkit_disk
@@ -119,6 +118,7 @@
 	build_path = /obj/item/borg/upgrade/modkit/aoe/turfs/andmobs
 	category = list("Mining", "Cyborg Upgrade Modules")
 	build_type = PROTOLATHE | MECHFAB
+	requires_whitelist = TRUE
 
 /datum/design/rapid_repeater_modkit
 	name = "Kinetic Accelerator Rapid Repeater Mod"
@@ -128,6 +128,7 @@
 	build_path = /obj/item/borg/upgrade/modkit/cooldown/repeater
 	category = list("Mining", "Cyborg Upgrade Modules")
 	build_type = PROTOLATHE | MECHFAB
+	requires_whitelist = TRUE
 
 /datum/design/resonator_blast_modkit
 	name = "Kinetic Accelerator Resonator Blast Mod"
@@ -137,6 +138,7 @@
 	build_path = /obj/item/borg/upgrade/modkit/resonator_blasts
 	category = list("Mining", "Cyborg Upgrade Modules")
 	build_type = PROTOLATHE | MECHFAB
+	requires_whitelist = TRUE
 
 /datum/design/bounty_modkit
 	name = "Kinetic Accelerator Death Syphon Mod"
@@ -147,6 +149,7 @@
 	build_path = /obj/item/borg/upgrade/modkit/bounty
 	category = list("Mining", "Cyborg Upgrade Modules")
 	build_type = PROTOLATHE | MECHFAB
+	requires_whitelist = TRUE
 
 //Spooky special loot
 
@@ -161,11 +164,11 @@
 #define BERSERK_COLOUR "#950a0a"
 
 /obj/item/clothing/suit/hooded/berserker
-	name = "champion's hardsuit"
+	name = "berserker hardsuit"
 	desc = "Voices echo from the hardsuit, driving the user insane. Is not space-proof."
 	icon_state = "hardsuit-berserker"
-	allowed = list(/obj/item/flashlight, /obj/item/tank/internals, /obj/item/resonator, /obj/item/mining_scanner, /obj/item/t_scanner/adv_mining_scanner, /obj/item/gun/energy/kinetic_accelerator, /obj/item/pickaxe, /obj/item/twohanded/spear)
-	armor = list(MELEE = 30, BULLET = 15, LASER = 10, ENERGY = 10, BOMB = 150, BIO = 0, RAD = 0, FIRE = INFINITY, ACID = INFINITY)
+	allowed = list(/obj/item/flashlight, /obj/item/tank/internals, /obj/item/resonator, /obj/item/mining_scanner, /obj/item/t_scanner/adv_mining_scanner, /obj/item/gun/energy/kinetic_accelerator, /obj/item/pickaxe, /obj/item/spear)
+	armor = list(MELEE = 30, BULLET = 15, LASER = 10, ENERGY = 10, BOMB = 150, RAD = 0, FIRE = INFINITY, ACID = INFINITY)
 	hoodtype = /obj/item/clothing/head/hooded/berserker
 	flags_inv = HIDEGLOVES | HIDESHOES | HIDEJUMPSUIT | HIDETAIL
 	heat_protection = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS
@@ -179,7 +182,7 @@
 		"Vox" = 'icons/mob/clothing/species/vox/suit.dmi',
 		"Vulpkanin" = 'icons/mob/clothing/species/vulpkanin/suit.dmi'
 		)
-	hide_tail_by_species = list("Unathi, Tajaran, Vox, Vulpkanin")
+	hide_tail_by_species = list("Unathi", "Tajaran", "Vox", "Vulpkanin")
 
 /obj/item/clothing/head/hooded/berserker
 	name = "berserker helmet"
@@ -189,7 +192,7 @@
 	light_color = BERSERK_COLOUR
 	light_power = 4
 	actions_types = list(/datum/action/item_action/berserk_mode)
-	armor = list(MELEE = 30, BULLET = 15, LASER = 10, ENERGY = 10, BOMB = 150, BIO = 0, RAD = 0, FIRE = INFINITY, ACID = INFINITY)
+	armor = list(MELEE = 30, BULLET = 15, LASER = 10, ENERGY = 10, BOMB = 150, RAD = 0, FIRE = INFINITY, ACID = INFINITY)
 	heat_protection = HEAD
 	max_heat_protection_temperature = FIRE_IMMUNITY_MAX_TEMP_PROTECT
 	resistance_flags = FIRE_PROOF | ACID_PROOF
@@ -232,7 +235,7 @@
 /obj/item/clothing/head/hooded/berserker/hit_reaction(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", final_block_chance = 0, damage = 0, attack_type = MELEE_ATTACK)
 	if(berserk_active)
 		return
-	if(istype(hitby, /obj/item/projectile))
+	if(isprojectile(hitby))
 		var/obj/item/projectile/P = hitby
 		if(P.damage_type == STAMINA)
 			return //no disabler rage
@@ -281,7 +284,7 @@
 	name = "Berserk"
 	desc = "Increase your movement and melee speed while also increasing your melee armor for a short amount of time."
 
-/datum/action/item_action/berserk_mode/Trigger(trigger_flags)
+/datum/action/item_action/berserk_mode/Trigger(left_click)
 	if(istype(target, /obj/item/clothing/head/hooded/berserker))
 		var/obj/item/clothing/head/hooded/berserker/berzerk = target
 		if(berzerk.berserk_active)
@@ -312,6 +315,8 @@
 	desc = "A wooden rod about the size of your forearm with a snake carved around it, winding its way up the sides of the rod. Something about it seems to inspire in you the responsibilty and duty to help others."
 	icon = 'icons/obj/lavaland/artefacts.dmi'
 	icon_state = "asclepius_dormant"
+	lefthand_file = 'icons/mob/inhands/staves_lefthand.dmi'
+	righthand_file = 'icons/mob/inhands/staves_righthand.dmi'
 	var/activated = FALSE
 	var/usedHand
 	var/mob/living/carbon/owner
@@ -362,9 +367,9 @@
 
 /obj/item/rod_of_asclepius/dropped(mob/user, silent)
 	..()
-	if(!activated)
+	if(!activated || QDELETED(src))
 		return
-	addtimer(CALLBACK(src, .proc/try_attach_to_owner), 0) // Do this once the drop call stack is done. The holding limb might be getting removed
+	addtimer(CALLBACK(src, PROC_REF(try_attach_to_owner)), 0) // Do this once the drop call stack is done. The holding limb might be getting removed
 
 /obj/item/rod_of_asclepius/proc/try_attach_to_owner()
 	if(ishuman(owner) && !QDELETED(owner))
@@ -403,7 +408,7 @@
 	activated = TRUE
 
 	owner.apply_status_effect(STATUS_EFFECT_HIPPOCRATIC_OATH)
-	RegisterSignal(owner, COMSIG_PARENT_QDELETING, .proc/deactivate)
+	RegisterSignal(owner, COMSIG_PARENT_QDELETING, PROC_REF(deactivate))
 
 /obj/item/rod_of_asclepius/proc/deactivate()
 	if(owner)
@@ -426,12 +431,15 @@
 	status = 0
 	contents = newlist(/obj/item/cursed_katana)
 
+/obj/item/organ/internal/cyberimp/arm/katana/prepare_eat()
+	return // It's a shard
+
 
 /obj/item/organ/internal/cyberimp/arm/katana/attack_self(mob/living/carbon/user, modifiers)
 	. = ..()
 	to_chat(user,"<span class='userdanger'>The mass goes up your arm and inside it!</span>")
 	playsound(user, 'sound/misc/demon_consume.ogg', 50, TRUE)
-	RegisterSignal(user, COMSIG_MOB_DEATH, .proc/user_death)
+	RegisterSignal(user, COMSIG_MOB_DEATH, PROC_REF(user_death))
 
 	user.drop_item()
 	insert(user)
@@ -461,7 +469,7 @@
 
 /obj/item/organ/internal/cyberimp/arm/katana/proc/user_death(mob/user)
 	SIGNAL_HANDLER
-	INVOKE_ASYNC(src, .proc/user_death_async, user)
+	INVOKE_ASYNC(src, PROC_REF(user_death_async), user)
 
 /obj/item/organ/internal/cyberimp/arm/katana/proc/user_death_async(mob/user)
 	Retract()
@@ -469,7 +477,7 @@
 		"<span class='userdanger'>You feel your body begin to turn to dust, your soul being drawn into [src]!</span>")
 	forceMove(get_turf(owner))
 	remove(user)
-	addtimer(CALLBACK(user, /mob/.proc/dust), 1 SECONDS)
+	addtimer(CALLBACK(user, TYPE_PROC_REF(/mob, dust)), 1 SECONDS)
 
 
 /obj/item/organ/internal/cyberimp/arm/katana/remove(mob/living/carbon/M, special)
@@ -495,12 +503,11 @@
 	Even with the weapon destroyed, all the pieces containing the creature have coagulated back together to find a new host."
 	icon = 'icons/obj/lavaland/artefacts.dmi'
 	icon_state = "cursed_katana"
-	lefthand_file = 'icons/mob/inhands/items_lefthand.dmi'
-	righthand_file = 'icons/mob/inhands/items_righthand.dmi'
+	lefthand_file = 'icons/mob/inhands/weapons_lefthand.dmi'
+	righthand_file = 'icons/mob/inhands/weapons_righthand.dmi'
 	force = 15
 	armour_penetration_percentage = 40
 	armour_penetration_flat = 10
-	block_chance = 50
 	sharp = TRUE
 	w_class = WEIGHT_CLASS_HUGE
 	attack_verb = list("attack", "slash", "stab", "slice", "tear", "lacerate", "rip", "dice", "cut")
@@ -510,17 +517,21 @@
 	var/timerid
 	var/list/input_list = list()
 	var/list/combo_strings = list()
-	var/static/list/combo_list = list(
-		ATTACK_STRIKE = list(COMBO_STEPS = list(LEFT_SLASH, LEFT_SLASH, RIGHT_SLASH), COMBO_PROC = .proc/strike),
-		ATTACK_SLICE = list(COMBO_STEPS = list(RIGHT_SLASH, LEFT_SLASH, LEFT_SLASH), COMBO_PROC = .proc/slice),
-		ATTACK_DASH = list(COMBO_STEPS = list(LEFT_SLASH, RIGHT_SLASH, RIGHT_SLASH), COMBO_PROC = .proc/dash),
-		ATTACK_CUT = list(COMBO_STEPS = list(RIGHT_SLASH, RIGHT_SLASH, LEFT_SLASH), COMBO_PROC = .proc/cut),
-		ATTACK_HEAL = list(COMBO_STEPS = list(LEFT_SLASH, RIGHT_SLASH, LEFT_SLASH, RIGHT_SLASH), COMBO_PROC = .proc/heal),
-		ATTACK_SHATTER = list(COMBO_STEPS = list(RIGHT_SLASH, LEFT_SLASH, RIGHT_SLASH, LEFT_SLASH), COMBO_PROC = .proc/shatter),
-		)
+	var/list/combo_list = list()
+
 
 /obj/item/cursed_katana/Initialize(mapload)
 	. = ..()
+	AddComponent(/datum/component/parry, _stamina_constant = 2, _stamina_coefficient = 0.5, _parryable_attack_types = NON_PROJECTILE_ATTACKS)
+	combo_list = list(
+		ATTACK_STRIKE = list(COMBO_STEPS = list(LEFT_SLASH, LEFT_SLASH, RIGHT_SLASH), COMBO_PROC = TYPE_PROC_REF(/obj/item/cursed_katana, strike)),
+		ATTACK_SLICE = list(COMBO_STEPS = list(RIGHT_SLASH, LEFT_SLASH, LEFT_SLASH), COMBO_PROC = TYPE_PROC_REF(/obj/item/cursed_katana, slice)),
+		ATTACK_DASH = list(COMBO_STEPS = list(LEFT_SLASH, RIGHT_SLASH, RIGHT_SLASH), COMBO_PROC = TYPE_PROC_REF(/obj/item/cursed_katana, dash)),
+		ATTACK_CUT = list(COMBO_STEPS = list(RIGHT_SLASH, RIGHT_SLASH, LEFT_SLASH), COMBO_PROC = TYPE_PROC_REF(/obj/item/cursed_katana, cut)),
+		ATTACK_HEAL = list(COMBO_STEPS = list(LEFT_SLASH, RIGHT_SLASH, LEFT_SLASH, RIGHT_SLASH), COMBO_PROC = TYPE_PROC_REF(/obj/item/cursed_katana, heal)),
+		ATTACK_SHATTER = list(COMBO_STEPS = list(RIGHT_SLASH, LEFT_SLASH, RIGHT_SLASH, LEFT_SLASH), COMBO_PROC = TYPE_PROC_REF(/obj/item/cursed_katana, shatter)),
+	)
+
 	for(var/combo in combo_list)
 		var/list/combo_specifics = combo_list[combo]
 		var/step_string = english_list(combo_specifics[COMBO_STEPS])
@@ -558,7 +569,7 @@
 		reset_inputs(null, TRUE)
 		return TRUE
 	else
-		timerid = addtimer(CALLBACK(src, .proc/reset_inputs, user, FALSE), 5 SECONDS, TIMER_UNIQUE|TIMER_OVERRIDE|TIMER_STOPPABLE)
+		timerid = addtimer(CALLBACK(src, PROC_REF(reset_inputs), user, FALSE), 5 SECONDS, TIMER_UNIQUE|TIMER_OVERRIDE|TIMER_STOPPABLE)
 		return ..()
 
 /obj/item/cursed_katana/hit_reaction(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", final_block_chance = 0, damage = 0, attack_type = MELEE_ATTACK)
@@ -586,9 +597,9 @@
 		"<span class='notice'>You hilt strike [target]!</span>")
 	to_chat(target, "<span class='userdanger'>You've been struck by [user]!</span>")
 	playsound(src, 'sound/weapons/genhit3.ogg', 50, TRUE)
-	RegisterSignal(target, COMSIG_MOVABLE_IMPACT, .proc/strike_throw_impact)
+	RegisterSignal(target, COMSIG_MOVABLE_IMPACT, PROC_REF(strike_throw_impact))
 	var/atom/throw_target = get_edge_target_turf(target, user.dir)
-	target.throw_at(throw_target, 5, 3, user, FALSE, callback = CALLBACK(target, /datum/.proc/UnregisterSignal, target, COMSIG_MOVABLE_IMPACT))
+	target.throw_at(throw_target, 5, 3, user, FALSE, callback = CALLBACK(target, TYPE_PROC_REF(/datum, UnregisterSignal), target, COMSIG_MOVABLE_IMPACT))
 	target.apply_damage(17, BRUTE, BODY_ZONE_CHEST)
 	to_chat(target, "<span class='userdanger'>You've been struck by [user]!</span>")
 	user.do_attack_animation(target, ATTACK_EFFECT_PUNCH)
@@ -671,7 +682,7 @@
 	to_chat(target, "<span class='userdanger'>[user] shatters [src] over you!</span>")
 	target.apply_damage((ishostile(target) ? 75 : 35), BRUTE, BODY_ZONE_CHEST, TRUE)
 	target.KnockDown(5 SECONDS)
-	target.adjustStaminaLoss(60) //Takes 4 hits to do, breaks your weapon. Perfectly fine.
+	target.apply_damage(60, STAMINA) //Takes 4 hits to do, breaks your weapon. Perfectly fine.
 	user.do_attack_animation(target, ATTACK_EFFECT_SMASH)
 	playsound(src, 'sound/effects/glassbr3.ogg', 100, TRUE)
 	if(ishuman(user))
@@ -680,7 +691,7 @@
 			if(O.holder == src)
 				O.Retract()
 	shattered = TRUE
-	addtimer(CALLBACK(src, .proc/coagulate, user), 45 SECONDS)
+	addtimer(CALLBACK(src, PROC_REF(coagulate), user), 45 SECONDS)
 
 /obj/item/cursed_katana/proc/coagulate(mob/user)
 	to_chat(user, "<span class='notice'>[src] reforms!</span>")

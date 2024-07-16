@@ -1,4 +1,4 @@
-/obj/effect/proc_holder/spell/touch/mime_malaise
+/datum/spell/touch/mime_malaise
 	name = "Mime Malaise"
 	desc = "A spell popular with theater nerd wizards and contrarian pranksters, this spell will put on a mime costume on the target, \
 		stun them so that they may contemplate Art, and silence them. \
@@ -9,7 +9,7 @@
 	base_cooldown = 300
 	clothes_req = TRUE
 	cooldown_min = 100 //50 deciseconds reduction per rank
-	action_icon_state = "mime"
+	action_icon_state = "mime_curse"
 
 /obj/item/melee/touch_attack/mime_malaise
 	name = "mime hand"
@@ -24,7 +24,7 @@
 		return
 
 	var/datum/effect_system/smoke_spread/s = new
-	s.set_up(5, 0, target)
+	s.set_up(5, FALSE, target)
 	s.start()
 
 	var/mob/living/carbon/human/H = target
@@ -37,17 +37,17 @@
 		unEquip(wear_mask, TRUE)
 		unEquip(w_uniform, TRUE)
 		unEquip(wear_suit, TRUE)
-		equip_to_slot_if_possible(new /obj/item/clothing/mask/gas/mime, slot_wear_mask, TRUE, TRUE)
-		equip_to_slot_if_possible(new /obj/item/clothing/under/mime, slot_w_uniform, TRUE, TRUE)
-		equip_to_slot_if_possible(new /obj/item/clothing/suit/suspenders, slot_wear_suit, TRUE, TRUE)
+		equip_to_slot_if_possible(new /obj/item/clothing/mask/gas/mime, SLOT_HUD_WEAR_MASK, TRUE, TRUE)
+		equip_to_slot_if_possible(new /obj/item/clothing/under/rank/civilian/mime, SLOT_HUD_JUMPSUIT, TRUE, TRUE)
+		equip_to_slot_if_possible(new /obj/item/clothing/suit/suspenders, SLOT_HUD_OUTER_SUIT, TRUE, TRUE)
 		Silence(14 SECONDS)
 	else
 		qdel(wear_mask)
 		qdel(w_uniform)
 		qdel(wear_suit)
-		equip_to_slot_if_possible(new /obj/item/clothing/mask/gas/mime/nodrop, slot_wear_mask, TRUE, TRUE)
-		equip_to_slot_if_possible(new /obj/item/clothing/under/mime/nodrop, slot_w_uniform, TRUE, TRUE)
-		equip_to_slot_if_possible(new /obj/item/clothing/suit/suspenders/nodrop, slot_wear_suit, TRUE, TRUE)
+		equip_to_slot_if_possible(new /obj/item/clothing/mask/gas/mime/nodrop, SLOT_HUD_WEAR_MASK, TRUE, TRUE)
+		equip_to_slot_if_possible(new /obj/item/clothing/under/rank/civilian/mime/nodrop, SLOT_HUD_JUMPSUIT, TRUE, TRUE)
+		equip_to_slot_if_possible(new /obj/item/clothing/suit/suspenders/nodrop, SLOT_HUD_OUTER_SUIT, TRUE, TRUE)
 		dna.SetSEState(GLOB.muteblock , TRUE, TRUE)
 		singlemutcheck(src, GLOB.muteblock, MUTCHK_FORCED)
 		dna.default_blocks.Add(GLOB.muteblock)

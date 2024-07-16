@@ -27,6 +27,7 @@
 /obj/item/clothing/mask/facehugger/Initialize(mapload)
 	. = ..()
 	AddComponent(/datum/component/proximity_monitor)
+	ADD_TRAIT(src, TRAIT_XENO_INTERACTABLE, UID())
 
 /obj/item/clothing/mask/facehugger/take_damage(damage_amount, damage_type = BRUTE, damage_flag = 0, sound_effect = 1, attack_dir)
 	..()
@@ -36,11 +37,8 @@
 /obj/item/clothing/mask/facehugger/attackby(obj/item/O, mob/user, params)
 	return O.attack_obj(src, user, params)
 
-/obj/item/clothing/mask/facehugger/attack_alien(mob/user) //can be picked up by aliens
-	return attack_hand(user)
-
 /obj/item/clothing/mask/facehugger/attack_hand(mob/user)
-	if((stat == CONSCIOUS && !sterile) && !isalien(user))
+	if((stat != DEAD && !sterile) && !isalien(user))
 		if(Attach(user))
 			return
 	..()
@@ -55,11 +53,11 @@
 	if(real)//So that giant red text about probisci doesn't show up for fake ones
 		switch(stat)
 			if(DEAD,UNCONSCIOUS)
-				. += "<span class='boldannounce'>[src] is not moving.</span>"
+				. += "<span class='boldannounceic'>[src] is not moving.</span>"
 			if(CONSCIOUS)
-				. += "<span class='boldannounce'>[src] seems to be active!</span>"
+				. += "<span class='boldannounceic'>[src] seems to be active!</span>"
 		if(sterile)
-			. += "<span class='boldannounce'>It looks like the proboscis has been removed.</span>"
+			. += "<span class='boldannounceic'>It looks like the proboscis has been removed.</span>"
 
 /obj/item/clothing/mask/facehugger/temperature_expose(datum/gas_mixture/air, exposed_temperature, exposed_volume)
 	..()
@@ -74,7 +72,7 @@
 	return
 
 /obj/item/clothing/mask/facehugger/on_found(mob/finder)
-	if(stat == CONSCIOUS)
+	if(stat != DEAD)
 		return HasProximity(finder)
 	return 0
 
@@ -86,7 +84,7 @@
 /obj/item/clothing/mask/facehugger/throw_at(atom/target, range, speed, mob/thrower, spin=1, diagonals_first = 0, datum/callback/callback, force, dodgeable)
 	if(!..())
 		return
-	if(stat == CONSCIOUS)
+	if(stat != DEAD)
 		icon_state = "[initial(icon_state)]_thrown"
 		spawn(15)
 			if(icon_state == "[initial(icon_state)]_thrown")
@@ -94,25 +92,23 @@
 
 /obj/item/clothing/mask/facehugger/throw_impact(atom/hit_atom)
 	..()
-	if(stat == CONSCIOUS)
+	if(stat != DEAD)
 		icon_state = "[initial(icon_state)]"
 		Attach(hit_atom)
 
 /obj/item/clothing/mask/facehugger/proc/Attach(mob/living/M)
 	if(!isliving(M))
 		return FALSE
-	if((!iscorgi(M) && !iscarbon(M)) || isalien(M))
+	if(HAS_TRAIT(M, TRAIT_XENO_IMMUNE))
 		return FALSE
 	if(attached)
 		return FALSE
 	else
 		attached = TRUE
 		addtimer(VARSET_CALLBACK(src, attached, FALSE), impregnation_time)
-	if(HAS_TRAIT(M, TRAIT_XENO_IMMUNE))
-		return FALSE
 	if(loc == M)
 		return FALSE
-	if(stat != CONSCIOUS)
+	if(stat == DEAD)
 		return FALSE
 	if(!sterile)
 		M.take_organ_damage(strength, 0) //done here so that even borgs and humans in helmets take damage
@@ -142,18 +138,22 @@
 									"<span class='userdanger'>[src] tears [W] off of [target]'s face!</span>")
 
 		src.loc = target
-		target.equip_to_slot_if_possible(src, slot_wear_mask, FALSE, TRUE)
+		target.equip_to_slot_if_possible(src, SLOT_HUD_WEAR_MASK, FALSE, TRUE)
 		if(!sterile)
 			M.KnockDown(impregnation_time + 2 SECONDS)
 			M.EyeBlind(impregnation_time + 2 SECONDS)
 			flags |= NODROP //You can't take it off until it dies... or figures out you're an IPC.
 
 	GoIdle() //so it doesn't jump the people that tear it off
-
-	addtimer(CALLBACK(src, .proc/Impregnate, M), impregnation_time)
+	var/obj/structure/bed/nest/our_nest = M.buckled
+	if(istype(our_nest))
+		addtimer(CALLBACK(our_nest, TYPE_PROC_REF(/obj/structure/bed/nest, ghost_check)), 15 SECONDS)
+	addtimer(CALLBACK(src, PROC_REF(Impregnate), M), impregnation_time)
 	return TRUE
 
-/obj/item/clothing/mask/facehugger/proc/Impregnate(mob/living/target as mob)
+/obj/item/clothing/mask/facehugger/proc/Impregnate(mob/living/target)
+	flags &= ~NODROP
+
 	if(!target || target.stat == DEAD || loc != target) //was taken off or something
 		return
 
@@ -165,19 +165,19 @@
 	if(ishuman(target))
 		var/mob/living/carbon/human/H = target
 		if(!H.check_has_mouth())
-			flags &= ~NODROP
+			target.show_message("<span class='notice'>[src] relaxes its grip on your head... it seems indifferent to you.</span>")
 			return
 
 	if(!sterile)
 		//target.contract_disease(new /datum/disease/alien_embryo(0)) //so infection chance is same as virus infection chance
 		target.visible_message("<span class='danger'>[src] falls limp after violating [target]'s face!</span>", \
 								"<span class='userdanger'>[src] falls limp after violating [target]'s face!</span>")
-		flags &= ~NODROP
 		Die()
 		icon_state = "[initial(icon_state)]_impregnated"
 
 		if(!target.get_int_organ(/obj/item/organ/internal/body_egg/alien_embryo))
 			new /obj/item/organ/internal/body_egg/alien_embryo(target)
+			SSblackbox.record_feedback("tally", "alien_growth", 1, "people_infected")
 	else
 		target.visible_message("<span class='danger'>[src] violates [target]'s face!</span>", \
 								"<span class='userdanger'>[src] violates [target]'s face!</span>")
@@ -195,7 +195,7 @@
 
 	stat = UNCONSCIOUS
 	icon_state = "[initial(icon_state)]_inactive"
-	addtimer(CALLBACK(src, .proc/GoActive), rand(min_active_time, max_active_time))
+	addtimer(CALLBACK(src, PROC_REF(GoActive)), rand(min_active_time, max_active_time))
 
 /obj/item/clothing/mask/facehugger/proc/Die()
 	if(stat == DEAD)
@@ -215,9 +215,6 @@
 		return FALSE
 	if(HAS_TRAIT(M, TRAIT_XENO_IMMUNE))
 		return FALSE
-
-	if(iscorgi(M))
-		return TRUE
 
 	var/mob/living/carbon/C = M
 	if(ishuman(C))

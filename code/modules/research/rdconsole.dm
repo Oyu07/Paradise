@@ -95,40 +95,21 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 		if(initial(tt.id) == ID)
 			return initial(tt.name)
 
-/proc/CallMaterialName(ID)
-	if(copytext(ID, 1, 2) == "$")
-		var/return_name = copytext(ID, 2)
-		switch(return_name)
-			if("metal")
-				return_name = "Metal"
-			if("glass")
-				return_name = "Glass"
-			if("gold")
-				return_name = "Gold"
-			if("silver")
-				return_name = "Silver"
-			if("plasma")
-				return_name = "Solid Plasma"
-			if("uranium")
-				return_name = "Uranium"
-			if("diamond")
-				return_name = "Diamond"
-			if("clown")
-				return_name = "Bananium"
-			if("mime")
-				return_name = "Tranquillite"
-			if("titanium")
-				return_name = "Titanium"
-			if("bluespace")
-				return_name = "Bluespace Mesh"
-			if("plastic")
-				return_name = "Plastic"
-		return return_name
-	else
-		for(var/R in subtypesof(/datum/reagent))
-			var/datum/reagent/rt = R
-			if(initial(rt.id) == ID)
-				return initial(rt.name)
+/proc/CallMaterialName(return_name)
+	switch(return_name)
+		if("plasma")
+			return_name = "Solid Plasma"
+		if("clown")
+			return_name = "Bananium"
+		if("mime")
+			return_name = "Tranquillite"
+		if("bluespace")
+			return_name = "Bluespace Mesh"
+		else
+			var/datum/reagent/our_reagent = GLOB.chemical_reagents_list[return_name]
+			if(our_reagent && initial(our_reagent.id) == return_name)
+				return_name = initial(our_reagent.name)
+	return capitalize(return_name)
 
 /obj/machinery/computer/rdconsole/proc/SyncRDevices() //Makes sure it is properly sync'ed up with the devices attached to it (if any).
 	for(var/obj/machinery/r_n_d/D in range(range, src))
@@ -160,8 +141,7 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 		files.known_tech[T.id] = T
 	for(var/v in files.known_tech)
 		var/datum/tech/KT = files.known_tech[v]
-		if(KT.level < KT.max_level)
-			KT.level=KT.max_level
+		KT.level = 8
 	files.RefreshResearch()
 
 /obj/machinery/computer/rdconsole/Initialize(mapload)
@@ -223,6 +203,7 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 		req_access = list()
 		emagged = TRUE
 		to_chat(user, "<span class='notice'>You disable the security protocols</span>")
+		return TRUE
 
 /obj/machinery/computer/rdconsole/proc/valid_nav(next_menu, next_submenu)
 	switch(next_menu)
@@ -268,11 +249,14 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 /obj/machinery/computer/rdconsole/proc/sync_research()
 	if(!sync)
 		return
+	var/list/temp_unblacklist = files.unblacklisted_designs
+	files.unblacklisted_designs = list() //Remove this asap, else it will stick around
 	clear_wait_message()
 	for(var/obj/machinery/r_n_d/server/S in GLOB.machines)
 		var/server_processed = FALSE
 
 		if((id in S.id_with_upload) || istype(S, /obj/machinery/r_n_d/server/centcom))
+			S.files.blacklisted_designs -= temp_unblacklist
 			files.push_data(S.files)
 			server_processed = TRUE
 
@@ -317,14 +301,14 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 			break
 
 	if(!pointless)
-		var/choice = input("This item does not raise tech levels. Proceed destroying loaded item anyway?") in list("Proceed", "Cancel")
+		var/choice = alert(user, "This item does not raise tech levels. Proceed destroying loaded item anyway?", "Are you sure you want to destroy this item?", "Proceed", "Cancel")
 		if(choice == "Cancel" || !linked_destroy)
 			return
 
 	linked_destroy.busy = TRUE
 	add_wait_message("Processing and Updating Database...", DECONSTRUCT_DELAY)
 	flick("d_analyzer_process", linked_destroy)
-	addtimer(CALLBACK(src, .proc/finish_destroyer, user, temp_tech), DECONSTRUCT_DELAY)
+	addtimer(CALLBACK(src, PROC_REF(finish_destroyer), user, temp_tech), DECONSTRUCT_DELAY)
 
 // Sends salvaged materials to a linked protolathe, if any.
 /obj/machinery/computer/rdconsole/proc/send_mats()
@@ -356,8 +340,8 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 	for(var/obj/I in linked_destroy.contents)
 		for(var/mob/M in I.contents)
 			M.death()
-		if(istype(I, /obj/item/stack/sheet))//Only deconstructs one sheet at a time instead of the entire stack
-			var/obj/item/stack/sheet/S = I
+		if(istype(I, /obj/item/stack))//Only deconstructs one item in a stack at a time instead of the entire stack
+			var/obj/item/stack/S = I
 			if(S.amount > 1)
 				S.amount--
 				linked_destroy.loaded_item = S
@@ -370,7 +354,7 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 
 	linked_destroy.busy = FALSE
 	use_power(DECONSTRUCT_POWER)
-	menu = MENU_MAIN
+	menu = MENU_DESTROY
 	submenu = SUBMENU_MAIN
 	SStgui.update_uis(src)
 
@@ -401,7 +385,7 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 		message_admins("[machine] exploit attempted by [key_name(usr, TRUE)]!")
 		return
 
-	if(being_built.make_reagents.len) // build_type should equal BIOGENERATOR though..
+	if(length(being_built.make_reagents)) // build_type should equal BIOGENERATOR though..
 		return
 
 	var/max_amount = is_lathe ? 10 : 1
@@ -442,7 +426,7 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 		enough_materials = FALSE
 	else
 		for(var/R in being_built.reagents_list)
-			if(!machine.reagents.has_reagent(R, being_built.reagents_list[R]) * coeff)
+			if(!machine.reagents.has_reagent(R, being_built.reagents_list[R] * coeff))
 				atom_say("Not enough reagents to complete prototype.")
 				enough_materials = FALSE
 
@@ -452,13 +436,16 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 			machine.reagents.remove_reagent(R, being_built.reagents_list[R] * coeff)
 
 	var/key = usr.key
-	addtimer(CALLBACK(src, .proc/finish_machine, key, amount, enough_materials, machine, being_built, efficient_mats), time_to_construct)
+	addtimer(CALLBACK(src, PROC_REF(finish_machine), key, amount, enough_materials, machine, being_built, efficient_mats), time_to_construct)
 
 /obj/machinery/computer/rdconsole/proc/finish_machine(key, amount, enough_materials,  obj/machinery/r_n_d/machine, datum/design/being_built, list/efficient_mats)
 	if(machine)
 		if(enough_materials && being_built)
+			SSblackbox.record_feedback("nested tally", "RND Production List", amount, list("[being_built.category]", "[being_built.name]"))
 			for(var/i in 1 to amount)
 				var/obj/item/new_item = new being_built.build_path(src)
+				new_item.pixel_x = rand(-5, 5)
+				new_item.pixel_y = rand(-5, 5)
 				if(istype(new_item, /obj/item/storage/backpack/holding))
 					new_item.investigate_log("built by [key]","singulo")
 				if(!istype(new_item, /obj/item/stack/sheet)) // To avoid materials dupe glitches
@@ -530,7 +517,7 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 
 		if("updt_tech") //Update the research holder with information from the technology disk.
 			add_wait_message("Updating Database...", TECH_UPDATE_DELAY)
-			addtimer(CALLBACK(src, .proc/update_from_disk), TECH_UPDATE_DELAY)
+			addtimer(CALLBACK(src, PROC_REF(update_from_disk)), TECH_UPDATE_DELAY)
 
 		if("clear_tech") //Erase data on the technology disk.
 			if(t_disk)
@@ -555,7 +542,7 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 
 		if("updt_design") //Updates the research holder with design data from the design disk.
 			add_wait_message("Updating Database...", DESIGN_UPDATE_DELAY)
-			addtimer(CALLBACK(src, .proc/update_from_disk), DESIGN_UPDATE_DELAY)
+			addtimer(CALLBACK(src, PROC_REF(update_from_disk)), DESIGN_UPDATE_DELAY)
 
 		if("clear_design") //Erases data on the design disk.
 			if(d_disk)
@@ -592,7 +579,7 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 		if("maxresearch")
 			if(!check_rights(R_ADMIN))
 				return
-			if(alert("Are you sure you want to maximize research levels?","Confirmation","Yes","No")=="No")
+			if(tgui_alert(usr, "Are you sure you want to maximize research levels?", "Confirmation", list("Yes", "No")) != "Yes")
 				return
 			log_admin("[key_name(usr)] has maximized the research levels.")
 			message_admins("[key_name_admin(usr)] has maximized the research levels.")
@@ -607,8 +594,7 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 				to_chat(usr, "<span class='danger'>You must connect to the network first!</span>")
 			else
 				add_wait_message("Syncing Database...", SYNC_RESEARCH_DELAY)
-				griefProtection() //Putting this here because I dont trust the sync process
-				addtimer(CALLBACK(src, .proc/sync_research), SYNC_RESEARCH_DELAY)
+				addtimer(CALLBACK(src, PROC_REF(sync_research)), SYNC_RESEARCH_DELAY)
 
 		if("togglesync") //Prevents the console from being synced by other consoles. Can still send data.
 			sync = !sync
@@ -643,7 +629,7 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 
 		if("find_device") //The R&D console looks for devices nearby to link up with.
 			add_wait_message("Syncing with nearby devices...", SYNC_DEVICE_DELAY)
-			addtimer(CALLBACK(src, .proc/find_devices), SYNC_DEVICE_DELAY)
+			addtimer(CALLBACK(src, PROC_REF(find_devices)), SYNC_DEVICE_DELAY)
 
 		if("disconnect") //The R&D console disconnects with a specific device.
 			switch(params["item"])
@@ -662,10 +648,10 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 
 		if("reset") //Reset the R&D console's database.
 			griefProtection()
-			var/choice = alert("Are you sure you want to reset the R&D console's database? Data lost cannot be recovered.", "R&D Console Database Reset", "Continue", "Cancel")
+			var/choice = tgui_alert(usr, "Are you sure you want to reset the R&D console's database? Data lost cannot be recovered.", "R&D Console Database Reset", list("Continue", "Cancel"))
 			if(choice == "Continue")
 				add_wait_message("Resetting Database...", RESET_RESEARCH_DELAY)
-				addtimer(CALLBACK(src, .proc/reset_research), RESET_RESEARCH_DELAY)
+				addtimer(CALLBACK(src, PROC_REF(reset_research)), RESET_RESEARCH_DELAY)
 
 		if("search") //Search for designs with name matching pattern
 			var/query = params["to_search"]
@@ -702,10 +688,13 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 		return TRUE
 	ui_interact(user)
 
-/obj/machinery/computer/rdconsole/ui_interact(mob/user, ui_key = "main", datum/tgui/ui = null, force_open = TRUE, datum/tgui/master_ui = null, datum/ui_state/state = GLOB.default_state)
-	ui = SStgui.try_update_ui(user, src, ui_key, ui, force_open)
+/obj/machinery/computer/rdconsole/ui_state(mob/user)
+	return GLOB.default_state
+
+/obj/machinery/computer/rdconsole/ui_interact(mob/user, datum/tgui/ui = null)
+	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
-		ui = new(user, src, ui_key, "RndConsole", name, 800, 550, master_ui, state)
+		ui = new(user, src, "RndConsole", name)
 		ui.open()
 
 /obj/machinery/computer/rdconsole/proc/ui_machine_data(obj/machinery/r_n_d/machine, list/data)
@@ -728,7 +717,7 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 	var/is_lathe = istype(machine, /obj/machinery/r_n_d/protolathe)
 	var/is_imprinter = istype(machine, /obj/machinery/r_n_d/circuit_imprinter)
 
-	if (!is_lathe && !is_imprinter)
+	if(!is_lathe && !is_imprinter)
 		return
 
 	var/coeff = machine.efficiency_coeff
@@ -914,7 +903,7 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 //helper proc that guarantees the wait message will not freeze the UI
 /obj/machinery/computer/rdconsole/proc/add_wait_message(message, delay)
 	wait_message = message
-	wait_message_timer = addtimer(CALLBACK(src, .proc/clear_wait_message), delay, TIMER_UNIQUE | TIMER_STOPPABLE)
+	wait_message_timer = addtimer(CALLBACK(src, PROC_REF(clear_wait_message)), delay, TIMER_UNIQUE | TIMER_STOPPABLE)
 
 // This is here to guarantee that we never lock the console, so long as the timer
 // process is running

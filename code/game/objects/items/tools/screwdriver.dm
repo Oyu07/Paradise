@@ -6,22 +6,26 @@
 	icon_state = "screwdriver_map"
 	belt_icon = "screwdriver"
 	flags = CONDUCT
-	slot_flags = SLOT_BELT
+	slot_flags = SLOT_FLAG_BELT
 	force = 5
 	w_class = WEIGHT_CLASS_TINY
 	throwforce = 5
 	throw_speed = 3
 	throw_range = 5
-	materials = list(MAT_METAL=75)
+	materials = list(MAT_METAL = 350)
 	attack_verb = list("stabbed")
 	hitsound = 'sound/weapons/bladeslice.ogg'
 	usesound = 'sound/items/screwdriver.ogg'
 	toolspeed = 1
-	armor = list(MELEE = 0, BULLET = 0, LASER = 0, ENERGY = 0, BOMB = 0, BIO = 0, RAD = 0, FIRE = 50, ACID = 30)
+	armor = list(MELEE = 0, BULLET = 0, LASER = 0, ENERGY = 0, BOMB = 0, RAD = 0, FIRE = 50, ACID = 30)
 	drop_sound = 'sound/items/handling/screwdriver_drop.ogg'
 	pickup_sound =  'sound/items/handling/screwdriver_pickup.ogg'
 	tool_behaviour = TOOL_SCREWDRIVER
 	var/random_color = TRUE //if the screwdriver uses random coloring
+
+/obj/item/screwdriver/Initialize(mapload)
+	. = ..()
+	AddComponent(/datum/component/surgery_initiator/robo)
 
 /obj/item/screwdriver/nuke
 	name = "screwdriver"
@@ -43,7 +47,7 @@
 		icon_state = "screwdriver_[param_color]"
 		belt_icon = "screwdriver_[param_color]"
 
-	if (prob(75))
+	if(prob(75))
 		src.pixel_y = rand(0, 16)
 
 /obj/item/screwdriver/attack(mob/living/carbon/M, mob/living/carbon/user)
@@ -63,14 +67,28 @@
 	random_color = FALSE
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
-/obj/item/screwdriver/abductor
-	name = "alien screwdriver"
-	desc = "An ultrasonic screwdriver."
-	icon = 'icons/obj/abductor.dmi'
-	icon_state = "screwdriver"
-	usesound = 'sound/items/pshoom.ogg'
-	toolspeed = 0.1
+/obj/item/screwdriver/cargo
+	name = "cargo screwdriver"
+	desc = "A brownish screwdriver belonging to the supply department. Unfortunately, it can't do all the paperwork for you..."
+	icon_state = "screwdriver_cargo"
+	belt_icon = "screwdriver_cargo"
+	toolspeed = 0.75
 	random_color = FALSE
+
+/obj/item/screwdriver/cargo/suicide_act(mob/living/user)
+
+	if(!user)
+		return
+	user.visible_message("<span class='suicide'>[user] is trying to take [src]'s independence! It looks like [user.p_theyre()] trying to commit suicide!</span>")
+
+	user.Immobilize(10 SECONDS)
+	sleep(2 SECONDS)
+	add_fingerprint(user)
+
+	user.visible_message("<span class='warn'>[src] retaliates viciously!</span>", "<span class='userdanger'>[src] retaliates viciously!</span>")
+	playsound(loc, hitsound, 50, TRUE, -1)
+
+	return BRUTELOSS
 
 /obj/item/screwdriver/power
 	name = "hand drill"
@@ -88,7 +106,12 @@
 	hitsound = 'sound/items/drill_hit.ogg'
 	usesound = 'sound/items/drill_use.ogg'
 	toolspeed = 0.25
+	w_class = WEIGHT_CLASS_NORMAL
 	random_color = FALSE
+
+/obj/item/screwdriver/power/Initialize(mapload)
+	. = ..()
+	ADD_TRAIT(src, TRAIT_ADVANCED_SURGICAL, ROUNDSTART_TRAIT)
 
 /obj/item/screwdriver/power/suicide_act(mob/user)
 	user.visible_message("<span class='suicide'>[user] is putting [src] to [user.p_their()] temple. It looks like [user.p_theyre()] trying to commit suicide!</span>")

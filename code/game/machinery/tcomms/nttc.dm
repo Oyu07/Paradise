@@ -26,6 +26,9 @@
 		"Robot" = "airadio",
 		// Assistant
 		"Assistant" = "radio",
+		"Off-Duty" = "radio",
+		"Retired" = "radio",
+		"Intern" = "radio",
 		// Command (Solo command, not department heads)
 		"Blueshield" = "comradio",
 		"Captain" = "comradio",
@@ -40,18 +43,32 @@
 		"Maintenance Technician" = "engradio",
 		"Station Engineer" = "engradio",
 		// Central Command
-		"Emergency Response Team Engineer" = "dsquadradio", // I know this says deathsquad but the class for responseteam is neon green. No.
+		"Custodian" = "dsquadradio", // I know this says deathsquad but the class for responseteam is neon green. No.
+		"Deathsquad Commando" = "dsquadradio",
+		"Emergency Response Team Engineer" = "dsquadradio",
 		"Emergency Response Team Leader" = "dsquadradio",
 		"Emergency Response Team Medic" = "dsquadradio",
 		"Emergency Response Team Member" = "dsquadradio",
 		"Emergency Response Team Officer" = "dsquadradio",
+		"Emergency Response Team Inquisitor" = "dsquadradio",
+		"Emergency Response Team Janitor" = "dsquadradio",
+		"Intel Officer" = "dsquadradio",
+		"Medical Officer" = "dsquadradio",
+		"Nanotrasen Navy Captain" = "dsquadradio",
 		"Nanotrasen Navy Officer" = "dsquadradio",
+		"Nanotrasen Navy Representative" = "dsquadradio",
+		"Research Officer" = "dsquadradio",
 		"Special Operations Officer" = "dsquadradio",
+		"Sol Trader" = "dsquadradio",
 		"Solar Federation General" = "dsquadradio",
+		"Solar Federation Representative" = "dsquadradio",
 		"Solar Federation Specops Lieutenant" = "dsquadradio",
 		"Solar Federation Specops Marine" = "dsquadradio",
 		"Solar Federation Lieutenant" = "dsquadradio",
 		"Solar Federation Marine" = "dsquadradio",
+		"Supreme Commander" = "dsquadradio",
+		"Thunderdome Overseer" = "dsquadradio",
+		"VIP Guest" = "dsquadradio",
 		// Medical
 		"Chemist" = "medradio",
 		"Chief Medical Officer" = "medradio",
@@ -60,6 +77,7 @@
 		"Microbiologist" = "medradio",
 		"Nurse" = "medradio",
 		"Paramedic" = "medradio",
+		"Pathologist" = "medradio",
 		"Pharmacologist" = "medradio",
 		"Pharmacist" = "medradio",
 		"Psychiatrist" = "medradio",
@@ -93,8 +111,10 @@
 		"Cargo Technician" = "supradio",
 		"Shaft Miner" = "supradio",
 		"Spelunker" = "supradio",
+		"Explorer" = "supradio",
+		"Salvage Technician" = "supradio",
+		"Scavenger" = "supradio",
 		// Service
-		"Barber" = "srvradio",
 		"Bartender" = "srvradio",
 		"Beautician" = "srvradio",
 		"Botanical Researcher" = "srvradio",
@@ -114,13 +134,13 @@
 		"Mime" = "srvradio",
 	)
 	/// List of Command jobs
-	var/list/heads = list("Captain", "Head of Personnel", "Nanotrasen Representative", "Blueshield", "Chief Engineer", "Chief Medical Officer", "Research Director", "Head of Security", "Magistrate", "AI")
+	var/list/heads = list("Captain", "Head of Personnel", "Nanotrasen Representative", "Blueshield", "Chief Engineer", "Chief Medical Officer", "Research Director", "Head of Security", "Magistrate", "Quartermaster", "AI")
 	/// List of ERT jobs
-	var/list/ert_jobs = list("Emergency Response Team Officer", "Emergency Response Team Engineer", "Emergency Response Team Medic", "Emergency Response Team Leader", "Emergency Response Team Member")
+	var/list/ert_jobs = list("Emergency Response Team Officer", "Emergency Response Team Engineer", "Emergency Response Team Medic", "Emergency Response Team Inquisitor", "Emergency Response Team Janitor", "Emergency Response Team Leader", "Emergency Response Team Member")
 	/// List of CentComm jobs
-	var/list/cc_jobs = list("Nanotrasen Navy Officer", "Special Operations Officer", "Syndicate Officer", "Solar Federation General")
+	var/list/cc_jobs = list("Nanotrasen Navy Officer", "Special Operations Officer", "Syndicate Officer", "Intel Officer", "Medical Officer", "Nanotrasen Navy Captain", "Nanotrasen Navy Representative", "Research Officer", "Supreme Commander", "Thunderdome Overseer")
 	/// List of SolGov Marine jobs
-	var/list/tsf_jobs = list("Solar Federation Specops Lieutenant", "Solar Federation Specops Marine", "Solar Federation Lieutenant", "Solar Federation Marine")
+	var/list/tsf_jobs = list("Solar Federation Specops Lieutenant", "Solar Federation Specops Marine", "Solar Federation Lieutenant", "Solar Federation Marine", "Solar Federation Representative", "Solar Federation General", "VIP Guest")
 	// Defined so code compiles and incase someone has a non-standard job
 	var/job_class = "radio"
 	// NOW FOR ACTUAL TOGGLES
@@ -177,7 +197,7 @@
 /datum/nttc_configuration/proc/update_languages()
 	for(var/language in GLOB.all_languages)
 		var/datum/language/L = GLOB.all_languages[language]
-		if(L.flags & HIVEMIND)
+		if(L.flags & (HIVEMIND | NONGLOBAL))
 			continue
 		valid_languages[language] = TRUE
 
@@ -235,8 +255,14 @@
 	// All job and coloring shit
 	if(toggle_job_color || toggle_name_color)
 		var/job = tcm.sender_job
-		job_class = all_jobs[job]
+		var/rank = tcm.sender_rank
+		//if the job title is not custom, just use that to decide the rules of formatting
+		if(job in all_jobs)
+			job_class = all_jobs[job]
+		else
+			job_class = all_jobs[rank]
 
+	tcm.pre_modify_name = tcm.sender_name
 	if(toggle_name_color)
 		var/new_name = "<span class=\"[job_class]\">[tcm.sender_name]</span>"
 		tcm.sender_name = new_name
@@ -249,25 +275,24 @@
 			job = "ERT"
 		if(toggle_job_color)
 			switch(job_indicator_type)
-				// These must have trailing spaces. No exceptions.
 				if(JOB_STYLE_1)
-					new_name = "[tcm.sender_name] <span class=\"[job_class]\">([job])</span> "
+					new_name = "[tcm.sender_name] <span class=\"[job_class]\">([job])</span>"
 				if(JOB_STYLE_2)
-					new_name = "[tcm.sender_name] - <span class=\"[job_class]\">[job]</span> "
+					new_name = "[tcm.sender_name] - <span class=\"[job_class]\">[job]</span>"
 				if(JOB_STYLE_3)
-					new_name = "<span class=\"[job_class]\"><small>\[[job]\]</small></span> [tcm.sender_name] "
+					new_name = "<span class=\"[job_class]\"><small>\[[job]\]</small></span> [tcm.sender_name]"
 				if(JOB_STYLE_4)
-					new_name = "<span class=[job_class]>([job])</span> [tcm.sender_name] "
+					new_name = "<span class=[job_class]>([job])</span> [tcm.sender_name]"
 		else
 			switch(job_indicator_type)
 				if(JOB_STYLE_1)
-					new_name = "[tcm.sender_name] ([job]) "
+					new_name = "[tcm.sender_name] ([job])"
 				if(JOB_STYLE_2)
-					new_name = "[tcm.sender_name] - [job] "
+					new_name = "[tcm.sender_name] - [job]"
 				if(JOB_STYLE_3)
-					new_name = "<small>\[[job]\]</small> [tcm.sender_name] "
+					new_name = "<small>\[[job]\]</small> [tcm.sender_name]"
 				if(JOB_STYLE_4)
-					new_name = "([job]) [tcm.sender_name] "
+					new_name = "([job]) [tcm.sender_name]"
 
 		// Only change the name if they have a job tag set, otherwise everyone becomes unknown, and thats bad
 		if(new_name != "")
@@ -279,7 +304,12 @@
 	// Makes heads of staff bold
 	if(toggle_command_bold)
 		var/job = tcm.sender_job
-		if((job in ert_jobs) || (job in heads) || (job in cc_jobs) || (job in tsf_jobs))
+		var/rank = tcm.sender_rank
+		var/realjob = job
+		if(!(job in all_jobs))
+			realjob = rank
+
+		if((realjob in ert_jobs) || (realjob in heads) || (realjob in cc_jobs) || (realjob in tsf_jobs))
 			for(var/I in 1 to length(message_pieces))
 				var/datum/multilingual_say_piece/S = message_pieces[I]
 				if(!S.message)

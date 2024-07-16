@@ -6,13 +6,13 @@
 	cures = list("iron")
 	agent = "Fukkos Miracos"
 	viable_mobtypes = list(/mob/living/carbon/human)
-	disease_flags = CAN_CARRY|CAN_RESIST|CURABLE
 	permeability_mod = 0.75
 	desc = "This disease disrupts the magnetic field of your body, making it act as if a powerful magnet. Injections of iron help stabilize the field."
-	severity = MEDIUM
+	severity = MINOR
 
 /datum/disease/magnitis/stage_act()
-	..()
+	if(!..())
+		return FALSE
 	switch(stage)
 		if(2)
 			if(prob(2))
@@ -22,7 +22,7 @@
 					if(!M.anchored && (M.flags & CONDUCT))
 						step_towards(M,affected_mob)
 				for(var/mob/living/silicon/S in orange(2,affected_mob))
-					if(istype(S, /mob/living/silicon/ai)) continue
+					if(isAI(S)) continue
 					step_towards(S,affected_mob)
 		if(3)
 			if(prob(2))
@@ -37,7 +37,7 @@
 						for(i=0,i<iter,i++)
 							step_towards(M,affected_mob)
 				for(var/mob/living/silicon/S in orange(4,affected_mob))
-					if(istype(S, /mob/living/silicon/ai)) continue
+					if(isAI(S)) continue
 					var/i
 					var/iter = rand(1,2)
 					for(i=0,i<iter,i++)
@@ -55,7 +55,7 @@
 						for(i=0,i<iter,i++)
 							step_towards(M,affected_mob)
 				for(var/mob/living/silicon/S in orange(6,affected_mob))
-					if(istype(S, /mob/living/silicon/ai)) continue
+					if(isAI(S)) continue
 					var/i
 					var/iter = rand(1,3)
 					for(i=0,i<iter,i++)

@@ -17,6 +17,12 @@
 	return
 
 /*
+	Returns: True if the target is within the 15 tile range of telekinesis and on the same z-level, false otherwise.
+*/
+/proc/telekinesis_range_check(mob/living/carbon/human/user, atom/target)
+	return (get_dist(user, target) <= TK_MAXRANGE && user.z == target.z)
+
+/*
 	This is similar to item attack_self, but applies to anything
 	that you can grab with a telekinetic grab.
 
@@ -89,7 +95,7 @@
 
 	//stops TK grabs being equipped anywhere but into hands
 /obj/item/tk_grab/equipped(mob/user, slot)
-	if( (slot == slot_l_hand) || (slot== slot_r_hand) )
+	if((slot == SLOT_HUD_LEFT_HAND) || (slot== SLOT_HUD_RIGHT_HAND))
 		return
 	qdel(src)
 
@@ -119,7 +125,7 @@
 	var/d = get_dist(user, target)
 	if(focus)
 		d = max(d,get_dist(user,focus)) // whichever is further
-	if(d > TK_MAXRANGE)
+	if(d > TK_MAXRANGE || user.z != target.z)
 		to_chat(user, "<span class='warning'>Your mind won't reach that far.</span>")
 		return
 
@@ -132,7 +138,7 @@
 		return // todo: something like attack_self not laden with assumptions inherent to attack_self
 
 
-	if(istype(focus,/obj/item) && target.Adjacent(focus) && !user.in_throw_mode)
+	if(isitem(focus) && target.Adjacent(focus) && !user.in_throw_mode)
 		var/obj/item/I = focus
 		var/resolved = target.attackby(I, user, params)
 		if(!resolved && target && I)
@@ -159,7 +165,7 @@
 		return I == focus
 
 /obj/item/tk_grab/proc/focus_object(obj/target, mob/user)
-	if(!istype(target,/obj))
+	if(!isobj(target))
 		return//Cant throw non objects atm might let it do mobs later
 	if(target.anchored || !isturf(target.loc))
 		qdel(src)
@@ -168,7 +174,7 @@
 	update_icon(UPDATE_OVERLAYS)
 	apply_focus_overlay()
 	// Make it behave like other equipment
-	if(istype(target, /obj/item))
+	if(isitem(target))
 		if(target in user.tkgrabbed_objects)
 			// Release the old grab first
 			user.unEquip(user.tkgrabbed_objects[target])
@@ -177,7 +183,7 @@
 /obj/item/tk_grab/proc/release_object()
 	if(!focus)
 		return
-	if(istype(focus, /obj/item))
+	if(isitem(focus))
 		// Delete the key/value pair of item to TK grab
 		host.tkgrabbed_objects -= focus
 	focus = null
@@ -200,3 +206,5 @@
 		. += icon(focus.icon,focus.icon_state)
 
 #undef TK_COOLDOWN
+
+#undef TK_MAXRANGE

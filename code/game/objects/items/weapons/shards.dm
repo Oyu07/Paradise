@@ -12,7 +12,7 @@
 	materials = list(MAT_GLASS = MINERAL_MATERIAL_AMOUNT)
 	attack_verb = list("stabbed", "slashed", "sliced", "cut")
 	hitsound = 'sound/weapons/bladeslice.ogg'
-	armor = list(MELEE = 100, BULLET = 0, LASER = 0, ENERGY = 100, BOMB = 0, BIO = 0, RAD = 0, FIRE = 50, ACID = 100)
+	armor = list(MELEE = 100, BULLET = 0, LASER = 0, ENERGY = 100, BOMB = 0, RAD = 0, FIRE = 50, ACID = 100)
 	max_integrity = 40
 	resistance_flags = ACID_PROOF
 	sharp = TRUE
@@ -21,13 +21,11 @@
 	var/obj/item/stack/sheet/welded_type = /obj/item/stack/sheet/glass
 
 /obj/item/shard/suicide_act(mob/user)
-		to_chat(viewers(user), pick("<span class='danger'>[user] is slitting [user.p_their()] wrists with [src]! It looks like [user.p_theyre()] trying to commit suicide.</span>",
-									"<span class='danger'>[user] is slitting [user.p_their()] throat with [src]! It looks like [user.p_theyre()] trying to commit suicide.</span>"))
+		to_chat(viewers(user), pick("<span class='danger'>[user] is slitting [user.p_their()] wrists with [src]! It looks like [user.p_theyre()] trying to commit suicide!</span>",
+									"<span class='danger'>[user] is slitting [user.p_their()] throat with [src]! It looks like [user.p_theyre()] trying to commit suicide!</span>"))
 		return BRUTELOSS
 
-/obj/item/shard/Initialize(mapload)
-	. = ..()
-	AddComponent(/datum/component/caltrop, force)
+/obj/item/shard/proc/set_initial_icon_state()
 	icon_state = pick("large", "medium", "small")
 	switch(icon_state)
 		if("small")
@@ -42,12 +40,17 @@
 	if(icon_prefix)
 		icon_state = "[icon_prefix][icon_state]"
 
+/obj/item/shard/Initialize()
+	. = ..()
+	AddComponent(/datum/component/caltrop, force)
+	set_initial_icon_state()
+
 /obj/item/shard/afterattack(atom/movable/AM, mob/user, proximity)
 	if(!proximity || !(src in user))
 		return
 	if(isturf(AM))
 		return
-	if(istype(AM, /obj/item/storage))
+	if(isstorage(AM))
 		return
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
@@ -58,12 +61,6 @@
 			to_chat(H, "<span class='warning'>[src] cuts into your hand!</span>")
 			if(affecting.receive_damage(force * 0.5))
 				H.UpdateDamageIcon()
-
-/obj/item/shard/attackby(obj/item/I, mob/user, params)
-	if(istype(I, /obj/item/lightreplacer))
-		I.attackby(src, user)
-		return
-	return ..()
 
 /obj/item/shard/welder_act(mob/user, obj/item/I)
 	. = TRUE

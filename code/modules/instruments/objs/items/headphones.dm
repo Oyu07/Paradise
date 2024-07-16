@@ -13,8 +13,8 @@
 	song.instrument_range = 0
 	song.allowed_instrument_ids = SSinstruments.synthesizer_instrument_ids
 	// To update the icon
-	RegisterSignal(src, COMSIG_SONG_START, .proc/start_playing)
-	RegisterSignal(src, COMSIG_SONG_END, .proc/stop_playing)
+	RegisterSignal(src, COMSIG_SONG_START, PROC_REF(start_playing))
+	RegisterSignal(src, COMSIG_SONG_END, PROC_REF(stop_playing))
 
 /obj/item/clothing/ears/headphones/Destroy()
 	QDEL_NULL(song)
@@ -48,7 +48,7 @@
 	icon_state = item_state = "headphones[on]"
 
 /obj/item/clothing/ears/headphones/item_action_slot_check(slot)
-	if(slot == slot_l_ear || slot == slot_r_ear)
+	if(slot == SLOT_HUD_LEFT_EAR || slot == SLOT_HUD_RIGHT_EAR)
 		return TRUE
 
 /**

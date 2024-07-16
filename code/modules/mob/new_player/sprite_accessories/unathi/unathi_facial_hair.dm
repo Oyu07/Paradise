@@ -1,7 +1,6 @@
 /datum/sprite_accessory/facial_hair/unathi
 	icon = 'icons/mob/sprite_accessories/unathi/unathi_facial_hair.dmi'
 	species_allowed = list("Unathi")
-	gender = NEUTER
 	over_hair = 1
 
 /datum/sprite_accessory/facial_hair/unathi/una_spines_long
@@ -53,7 +52,7 @@
 	name = "Side Frills"
 	icon_state = "sidefrills"
 	secondary_theme = "webbing"
-    
+
 /datum/sprite_accessory/facial_hair/unathi/una_frills_dorsal
 	over_hair = null
 	name = "Dorsal Frills"

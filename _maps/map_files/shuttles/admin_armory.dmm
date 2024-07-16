@@ -16,7 +16,7 @@
 /turf/simulated/floor/mineral/plastitanium/red,
 /area/shuttle/administration)
 "aP" = (
-/obj/machinery/vending/security,
+/obj/machinery/economy/vending/security,
 /obj/machinery/light/spot{
 	dir = 8
 	},
@@ -63,7 +63,8 @@
 /area/shuttle/administration)
 "dn" = (
 /obj/machinery/computer/camera_advanced/shuttle_docker/admin{
-	name = "NRV Sparta navigation computer"
+	name = "NRV Sparta navigation computer";
+	dir = 4
 	},
 /turf/simulated/floor/mineral/plastitanium/red,
 /area/shuttle/administration)
@@ -90,7 +91,9 @@
 	name = "Shuttle Turret Control";
 	pixel_y = 30
 	},
-/obj/machinery/computer/camera_advanced,
+/obj/machinery/computer/camera_advanced{
+	dir = 4
+	},
 /turf/simulated/floor/mineral/plastitanium/red,
 /area/shuttle/administration)
 "eL" = (
@@ -130,7 +133,8 @@
 /area/shuttle/administration)
 "gj" = (
 /obj/machinery/computer/communications{
-	name = "NRV Sparta Communications Console"
+	name = "NRV Sparta Communications Console";
+	dir = 4
 	},
 /turf/simulated/floor/mineral/plastitanium/red,
 /area/shuttle/administration)
@@ -222,10 +226,17 @@
 /turf/simulated/floor/mineral/plastitanium/red,
 /area/shuttle/administration)
 "rb" = (
-/obj/machinery/door/window/brigdoor/southleft{
-	req_one_access_txt = "2;19"
+/obj/machinery/door/window/reinforced/normal{
+	dir = 2;
+	name = "Reinforced Glass Door"
 	},
+/obj/effect/mapping_helpers/airlock/windoor/access/any/command/general,
+/obj/effect/mapping_helpers/airlock/windoor/access/any/security/brig,
 /turf/simulated/floor/mineral/titanium/blue,
+/area/shuttle/administration)
+"rA" = (
+/obj/structure/sign/securearea,
+/turf/simulated/wall/mineral/titanium/nodiagonal,
 /area/shuttle/administration)
 "sq" = (
 /obj/structure/table/reinforced,
@@ -266,7 +277,6 @@
 	name = "Airlock Blast Door Control";
 	pixel_x = 5;
 	pixel_y = 35;
-	req_access = null;
 	req_access_txt = "19"
 	},
 /obj/structure/chair/comfy/shuttle{
@@ -330,10 +340,6 @@
 	},
 /turf/simulated/floor/mineral/plastitanium/red,
 /area/shuttle/administration)
-"wQ" = (
-/obj/effect/spawner/window/shuttle,
-/turf/space,
-/area/shuttle/administration)
 "xm" = (
 /obj/structure/table/reinforced,
 /obj/item/rcd/preloaded,
@@ -385,12 +391,16 @@
 /area/shuttle/administration)
 "yg" = (
 /obj/structure/table/reinforced,
-/obj/machinery/door/window/brigdoor/eastleft{
+/obj/machinery/door/window/reinforced/normal{
 	name = "Armory";
-	req_access_txt = "3"
+	dir = 4
 	},
-/obj/machinery/door/window/brigdoor/westleft{
-	name = "Armory"
+/obj/effect/mapping_helpers/airlock/windoor/access/any/security/armory{
+	dir = 4
+	},
+/obj/machinery/door/window/reinforced/normal{
+	name = "Armory";
+	dir = 8
 	},
 /obj/machinery/door/poddoor/shutters/preopen{
 	dir = 8;
@@ -444,9 +454,9 @@
 /area/shuttle/administration)
 "Bj" = (
 /obj/structure/fans/tiny,
-/obj/machinery/door/airlock/external{
-	req_one_access_txt = "2;19"
-	},
+/obj/machinery/door/airlock/external,
+/obj/effect/mapping_helpers/airlock/access/any/command/general,
+/obj/effect/mapping_helpers/airlock/access/any/security/brig,
 /obj/machinery/door/poddoor{
 	density = 0;
 	icon_state = "open";
@@ -457,9 +467,12 @@
 /turf/simulated/floor/plating,
 /area/shuttle/administration)
 "Bn" = (
-/obj/machinery/door/window/brigdoor/southleft{
-	req_one_access_txt = "2;19"
+/obj/machinery/door/window/reinforced/normal{
+	dir = 2;
+	name = "Reinforced Glass Door"
 	},
+/obj/effect/mapping_helpers/airlock/windoor/access/any/command/general,
+/obj/effect/mapping_helpers/airlock/windoor/access/any/security/brig,
 /turf/simulated/floor/mineral/plastitanium/red,
 /area/shuttle/administration)
 "Bq" = (
@@ -620,18 +633,25 @@
 /area/shuttle/administration)
 "Ir" = (
 /obj/machinery/computer/shuttle/admin{
-	name = "NRV Sparta shuttle console"
+	name = "NRV Sparta shuttle console";
+	dir = 4
 	},
 /turf/simulated/floor/mineral/plastitanium/red,
+/area/shuttle/administration)
+"Iv" = (
+/turf/simulated/wall/mineral/titanium/nodiagonal,
 /area/shuttle/administration)
 "Jt" = (
 /obj/machinery/suit_storage_unit/standard_unit,
 /turf/simulated/floor/mineral/plastitanium/red,
 /area/shuttle/administration)
 "Ke" = (
-/obj/machinery/door/window/brigdoor/southright{
-	req_one_access_txt = "2;19"
+/obj/machinery/door/window/reinforced/reversed{
+	dir = 2;
+	name = "Reinforced Glass Door"
 	},
+/obj/effect/mapping_helpers/airlock/windoor/access/any/command/general,
+/obj/effect/mapping_helpers/airlock/windoor/access/any/security/brig,
 /turf/simulated/floor/mineral/titanium/blue,
 /area/shuttle/administration)
 "Kh" = (
@@ -678,7 +698,7 @@
 /turf/simulated/floor/mineral/plastitanium/red,
 /area/shuttle/administration)
 "Mj" = (
-/obj/machinery/vending/medical,
+/obj/machinery/economy/vending/medical,
 /turf/simulated/floor/mineral/titanium/blue,
 /area/shuttle/administration)
 "Mo" = (
@@ -737,9 +757,12 @@
 /turf/simulated/floor/mineral/titanium/blue,
 /area/shuttle/administration)
 "Pe" = (
-/obj/machinery/door/window/brigdoor/southright{
-	req_one_access_txt = "2;19"
+/obj/machinery/door/window/reinforced/reversed{
+	dir = 2;
+	name = "Reinforced Glass Door"
 	},
+/obj/effect/mapping_helpers/airlock/windoor/access/any/command/general,
+/obj/effect/mapping_helpers/airlock/windoor/access/any/security/brig,
 /turf/simulated/floor/mineral/plastitanium/red,
 /area/shuttle/administration)
 "Pn" = (
@@ -804,10 +827,9 @@
 /area/shuttle/administration)
 "TD" = (
 /obj/machinery/door/airlock/command{
-	name = "Command Center";
-	req_access = null;
-	req_access_txt = "19"
+	name = "Command Center"
 	},
+/obj/effect/mapping_helpers/airlock/access/all/command/general,
 /turf/simulated/floor/mineral/plastitanium/red,
 /area/shuttle/administration)
 "TF" = (
@@ -871,9 +893,9 @@
 /area/shuttle/administration)
 "VC" = (
 /obj/machinery/door/airlock/titanium{
-	name = "Shuttle Armory";
-	req_access_txt = "3"
+	name = "Shuttle Armory"
 	},
+/obj/effect/mapping_helpers/airlock/access/all/security/armory,
 /turf/simulated/floor/mineral/plastitanium/red,
 /area/shuttle/administration)
 "VQ" = (
@@ -934,7 +956,7 @@ vk
 NQ
 NQ
 NQ
-wQ
+NQ
 vk
 vk
 vk
@@ -1020,7 +1042,7 @@ vk
 xH
 NQ
 NQ
-kf
+rA
 "}
 (6,1,1) = {"
 vk
@@ -1264,22 +1286,22 @@ vk
 "}
 (18,1,1) = {"
 vk
-vk
+Iv
 uW
 uW
+Iv
 vk
 vk
-vk
-vk
+Iv
 uW
 uW
+Iv
 vk
 vk
-vk
-vk
+Iv
 uW
 uW
-vk
+Iv
 vk
 "}
 (19,1,1) = {"

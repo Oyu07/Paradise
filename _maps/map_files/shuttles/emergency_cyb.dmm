@@ -102,7 +102,8 @@
 /area/shuttle/escape)
 "ar" = (
 /obj/machinery/computer/security{
-	network = list("SS13","Research Outpost","Mining Outpost","Telecomms")
+	network = list("SS13","Research Outpost","Mining Outpost","Telecomms");
+	dir = 4
 	},
 /obj/structure/sign/poster/official/nanotrasen_logo{
 	pixel_x = -32
@@ -140,7 +141,9 @@
 	},
 /area/shuttle/escape)
 "ax" = (
-/obj/machinery/computer/station_alert,
+/obj/machinery/computer/station_alert{
+	dir = 8
+	},
 /obj/structure/sign/poster/official/nanotrasen_logo{
 	pixel_x = 32
 	},
@@ -150,7 +153,9 @@
 	},
 /area/shuttle/escape)
 "ay" = (
-/obj/machinery/computer/secure_data,
+/obj/machinery/computer/secure_data{
+	dir = 4
+	},
 /turf/simulated/floor/plasteel{
 	dir = 10;
 	icon_state = "darkred"
@@ -181,7 +186,9 @@
 	},
 /area/shuttle/escape)
 "aC" = (
-/obj/machinery/computer/atmos_alert,
+/obj/machinery/computer/atmos_alert{
+	dir = 8
+	},
 /turf/simulated/floor/plasteel{
 	dir = 6;
 	icon_state = "darkyellow"
@@ -193,9 +200,9 @@
 /area/shuttle/escape)
 "aF" = (
 /obj/machinery/door/airlock/command/glass{
-	name = "Escape Shuttle Cockpit";
-	req_access_txt = "19"
+	name = "Escape Shuttle Cockpit"
 	},
+/obj/effect/mapping_helpers/airlock/access/all/command/general,
 /turf/simulated/floor/plasteel,
 /area/shuttle/escape)
 "aG" = (
@@ -336,9 +343,9 @@
 /area/shuttle/escape)
 "be" = (
 /obj/machinery/door/airlock/titanium/glass{
-	name = "Emergency Airlock Access";
-	req_access_txt = "63"
+	name = "Emergency Airlock Access"
 	},
+/obj/effect/mapping_helpers/airlock/access/all/security/doors,
 /turf/simulated/floor/plasteel,
 /area/shuttle/escape)
 "bf" = (
@@ -366,9 +373,9 @@
 /area/shuttle/escape)
 "bj" = (
 /obj/machinery/door/airlock/security/glass{
-	name = "Escape Shuttle Cell";
-	req_access_txt = "63"
+	name = "Escape Shuttle Cell"
 	},
+/obj/effect/mapping_helpers/airlock/access/all/security/doors,
 /turf/simulated/floor/mineral/plastitanium/red/brig,
 /area/shuttle/escape)
 "bk" = (
@@ -407,7 +414,7 @@
 /turf/simulated/floor/mineral/plastitanium/red/brig,
 /area/shuttle/escape)
 "br" = (
-/obj/item/twohanded/required/kirbyplants,
+/obj/item/kirbyplants,
 /turf/simulated/floor/plasteel{
 	dir = 8;
 	icon_state = "redcorner"
@@ -425,7 +432,7 @@
 /turf/simulated/floor/plating/airless,
 /area/shuttle/escape)
 "bx" = (
-/obj/item/twohanded/required/kirbyplants,
+/obj/item/kirbyplants,
 /obj/structure/extinguisher_cabinet{
 	pixel_x = 28
 	},
@@ -436,7 +443,7 @@
 "by" = (
 /obj/structure/table,
 /obj/item/storage/firstaid,
-/obj/effect/decal/warning_stripes/yellow/hollow,
+/obj/effect/turf_decal/delivery/hollow,
 /turf/simulated/floor/plasteel,
 /area/shuttle/escape)
 "bz" = (
@@ -472,9 +479,9 @@
 /area/shuttle/escape)
 "bC" = (
 /obj/machinery/door/airlock/command/glass{
-	name = "Escape Shuttle Cockpit";
-	req_access_txt = "63"
+	name = "Escape Shuttle Cockpit"
 	},
+/obj/effect/mapping_helpers/airlock/access/all/security/doors,
 /turf/simulated/floor/plasteel{
 	dir = 8;
 	icon_state = "neutralfull"
@@ -537,14 +544,14 @@
 	},
 /area/shuttle/escape)
 "bJ" = (
-/obj/item/twohanded/required/kirbyplants,
+/obj/item/kirbyplants,
 /obj/machinery/light{
 	dir = 8
 	},
 /turf/simulated/floor/plasteel,
 /area/shuttle/escape)
 "bK" = (
-/obj/item/twohanded/required/kirbyplants,
+/obj/item/kirbyplants,
 /obj/machinery/light{
 	dir = 4
 	},
@@ -666,7 +673,7 @@
 	},
 /area/shuttle/escape)
 "cb" = (
-/obj/item/twohanded/required/kirbyplants,
+/obj/item/kirbyplants,
 /turf/simulated/floor/plasteel,
 /area/shuttle/escape)
 "cc" = (
@@ -759,10 +766,11 @@
 /area/shuttle/escape)
 "cl" = (
 /obj/machinery/door/airlock/medical/glass{
-	id_tag = null;
 	name = "Escape Shuttle Infirmary"
 	},
-/obj/effect/decal/warning_stripes/south,
+/obj/effect/turf_decal/stripes/line{
+	dir = 2
+	},
 /turf/simulated/floor/plasteel,
 /area/shuttle/escape)
 "cm" = (
@@ -815,7 +823,6 @@
 /area/shuttle/escape)
 "cu" = (
 /obj/machinery/door/airlock/medical/glass{
-	id_tag = null;
 	name = "Escape Shuttle Infirmary"
 	},
 /turf/simulated/floor/plasteel{
@@ -884,7 +891,7 @@
 /obj/machinery/light{
 	dir = 8
 	},
-/obj/item/reagent_containers/food/drinks/mug/med,
+/obj/item/reagent_containers/drinks/mug/med,
 /turf/simulated/floor/plasteel{
 	icon_state = "cmo"
 	},
@@ -1006,7 +1013,7 @@ aO
 aH
 aH
 aH
-bj
+ac
 bg
 ba
 ba

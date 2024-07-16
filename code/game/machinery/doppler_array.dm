@@ -47,15 +47,9 @@ GLOBAL_LIST_EMPTY(doppler_arrays)
 
 /obj/machinery/doppler_array/wrench_act(mob/user, obj/item/I)
 	. = TRUE
-	if(!I.use_tool(src, user, 0, volume = I.tool_volume))
+	if(!default_unfasten_wrench(user, I, 0))
 		return
-	if(!anchored && !isinspace())
-		anchored = TRUE
-		WRENCH_ANCHOR_MESSAGE
-	else if(anchored)
-		anchored = FALSE
-		WRENCH_UNANCHOR_MESSAGE
-	power_change()
+	update_icon(UPDATE_ICON_STATE)
 
 /obj/machinery/doppler_array/attack_hand(mob/user)
 	if(..())
@@ -69,14 +63,8 @@ GLOBAL_LIST_EMPTY(doppler_arrays)
 /obj/machinery/doppler_array/AltClick(mob/user)
 	rotate(user)
 
-/obj/machinery/doppler_array/verb/rotate(mob/user)
-	set name = "Rotate Tachyon-doppler Dish"
-	set category = "Object"
-	set src in oview(1)
-
-	if(user.incapacitated())
-		return
-	if(!Adjacent(user))
+/obj/machinery/doppler_array/proc/rotate(mob/user)
+	if(user.stat || HAS_TRAIT(user, TRAIT_HANDS_BLOCKED) || !Adjacent(user))
 		return
 	if(!user.IsAdvancedToolUser())
 		to_chat(user, "<span class='warning'>You don't have the dexterity to do that!</span>")
@@ -85,14 +73,14 @@ GLOBAL_LIST_EMPTY(doppler_arrays)
 	to_chat(user, "<span class='notice'>You rotate [src].</span>")
 
 /obj/machinery/doppler_array/proc/print_explosive_logs(mob/user)
-	if(!logged_explosions.len)
+	if(!length(logged_explosions))
 		atom_say("No logs currently stored in internal database.")
 		return
 	if(active_timers)
 		to_chat(user, "<span class='notice'>[src] is already printing something, please wait.</span>")
 		return
 	atom_say("Printing explosive log. Standby...")
-	addtimer(CALLBACK(src, .proc/print), 50)
+	addtimer(CALLBACK(src, PROC_REF(print)), 50)
 
 /obj/machinery/doppler_array/proc/print()
 	visible_message("<span class='notice'>[src] prints a piece of paper!</span>")
@@ -110,7 +98,7 @@ GLOBAL_LIST_EMPTY(doppler_arrays)
 	<em>Printed at [station_time_timestamp()].</em>"
 
 /obj/machinery/doppler_array/proc/sense_explosion(var/x0,var/y0,var/z0,var/devastation_range,var/heavy_impact_range,var/light_impact_range,
-												  var/took,var/orig_dev_range,var/orig_heavy_range,var/orig_light_range)
+												var/took,var/orig_dev_range,var/orig_heavy_range,var/orig_light_range)
 	if(stat & NOPOWER)
 		return
 	if(z != z0)
@@ -141,8 +129,8 @@ GLOBAL_LIST_EMPTY(doppler_arrays)
 		return
 
 	var/list/messages = list("Explosive disturbance detected.", \
-							 "Epicenter at: grid ([x0],[y0]). Temporal displacement of tachyons: [took] seconds.", \
-							 "Actual: Epicenter radius: [devastation_range]. Outer radius: [heavy_impact_range]. Shockwave radius: [light_impact_range].")
+							"Epicenter at: grid ([x0],[y0]). Temporal displacement of tachyons: [took] seconds.", \
+							"Actual: Epicenter radius: [devastation_range]. Outer radius: [heavy_impact_range]. Shockwave radius: [light_impact_range].")
 
 	// If the bomb was capped, say its theoretical size.
 	if(devastation_range < orig_dev_range || heavy_impact_range < orig_heavy_range || light_impact_range < orig_light_range)
@@ -162,21 +150,26 @@ GLOBAL_LIST_EMPTY(doppler_arrays)
 	for(var/message in messages)
 		atom_say(message)
 
-/obj/machinery/doppler_array/power_change()
+/obj/machinery/doppler_array/update_icon_state()
 	if(stat & BROKEN)
 		icon_state = "[initial(icon_state)]-broken"
 	else
-		if(powered() && anchored)
-			icon_state = initial(icon_state)
-			stat &= ~NOPOWER
-		else
-			icon_state = "[initial(icon_state)]-off"
-			stat |= NOPOWER
+		icon_state = !(stat & NOPOWER) && anchored ? initial(icon_state) : "[initial(icon_state)]-off"
 
-/obj/machinery/doppler_array/ui_interact(mob/user, ui_key = "main", datum/tgui/ui = null, force_open = FALSE, datum/tgui/master_ui = null, datum/ui_state/state = GLOB.default_state)
-	ui = SStgui.try_update_ui(user, src, ui_key, ui, force_open)
+/// overrides base power_change to check to make sure machine is anchored
+/obj/machinery/doppler_array/power_change()
+	if(has_power(power_channel) && anchored)
+		stat &= ~NOPOWER
+	else
+		stat |= NOPOWER
+
+/obj/machinery/doppler_array/ui_state(mob/user)
+	return GLOB.default_state
+
+/obj/machinery/doppler_array/ui_interact(mob/user, datum/tgui/ui = null)
+	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
-		ui = new(user, src, ui_key, "TachyonArray", name, 500, 600, master_ui, state)
+		ui = new(user, src, "TachyonArray", name)
 		ui.open()
 
 /obj/machinery/doppler_array/ui_data(mob/user)
@@ -201,7 +194,7 @@ GLOBAL_LIST_EMPTY(doppler_arrays)
 		return
 	switch(action)
 		if("delete_logs")
-			QDEL_LIST(logged_explosions)
+			QDEL_LIST_CONTENTS(logged_explosions)
 			to_chat(usr, "<span class='notice'>All logs deleted successfully.</span>")
 		if("delete_record")
 			var/index = text2num(params["index"])

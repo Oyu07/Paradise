@@ -2,7 +2,7 @@
 	name = "soap"
 	desc = "A cheap bar of soap. Doesn't smell."
 	gender = PLURAL
-	icon = 'icons/obj/items.dmi'
+	icon = 'icons/obj/janitor.dmi'
 	icon_state = "soap"
 	lefthand_file = 'icons/mob/inhands/equipment/custodial_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/equipment/custodial_righthand.dmi'
@@ -12,55 +12,63 @@
 	throw_range = 20
 	discrete = 1
 	var/cleanspeed = 50 //slower than mop
+	var/times_eaten = 0 //How many times a Drask has chewed on this bar of soap
+	var/max_bites = 30 //The maximum amount of bites before the soap is depleted
 
 /obj/item/soap/Initialize(mapload)
 	. = ..()
 	AddComponent(/datum/component/slippery, src, 8 SECONDS, 100, 0, FALSE)
 
 /obj/item/soap/afterattack(atom/target, mob/user, proximity)
-	if(!proximity) return
-	//I couldn't feasibly  fix the overlay bugs caused by cleaning items we are wearing.
-	//So this is a workaround. This also makes more sense from an IC standpoint. ~Carn
-	if(user.client && (target in user.client.screen))
-		to_chat(user, "<span class='notice'>You need to take that [target.name] off before cleaning it.</span>")
-	else if(target == user && user.a_intent == INTENT_GRAB && ishuman(target))
+	if(!proximity)
+		return
+	if(user.zone_selected == "mouth" && ishuman(target)) // cleaning out someone's mouth is a different act
+		return
+	if(target == user && user.a_intent == INTENT_GRAB && ishuman(target))
 		var/mob/living/carbon/human/muncher = user
 		if(muncher && isdrask(muncher))
-			to_chat(user, "<span class='notice'>You take a bite of [src]. Delicious!</span>")
-			playsound(user.loc, 'sound/items/eatfood.ogg', 50, 0)
-			user.adjust_nutrition(2)
-	else if(istype(target, /obj/effect/decal/cleanable) || istype(target, /obj/effect/rune))
-		user.visible_message("<span class='warning'>[user] begins to scrub \the [target.name] out with [src].</span>")
-		if(do_after(user, cleanspeed, target = target) && target)
-			to_chat(user, "<span class='notice'>You scrub \the [target.name] out.</span>")
-			if(issimulatedturf(target.loc))
-				clean_turf(target.loc)
-				return
-			qdel(target)
-	else if(issimulatedturf(target))
-		user.visible_message("<span class='warning'>[user] begins to clean \the [target.name] with [src].</span>")
-		if(do_after(user, cleanspeed, target = target))
-			to_chat(user, "<span class='notice'>You clean \the [target.name].</span>")
-			clean_turf(target)
-	else
-		user.visible_message("<span class='warning'>[user] begins to clean \the [target.name] with [src].</span>")
-		if(do_after(user, cleanspeed, target = target))
-			to_chat(user, "<span class='notice'>You clean \the [target.name].</span>")
-			var/obj/effect/decal/cleanable/C = locate() in target
-			qdel(C)
-			target.clean_blood()
+			eat_soap(muncher)
+			return
+	target.cleaning_act(user, src, cleanspeed)
 
-/obj/item/soap/proc/clean_turf(turf/simulated/T)
-	T.clean_blood()
-	for(var/obj/effect/O in T)
-		if(O.is_cleanable())
-			qdel(O)
+/obj/item/soap/add_blood(list/blood_dna, b_color)
+	return
+
+/obj/item/soap/proc/eat_soap(mob/living/carbon/human/drask/user)
+	times_eaten++
+	playsound(user.loc, 'sound/items/eatfood.ogg', 50, 0)
+	user.adjust_nutrition(5)
+	user.reagents.add_reagent("soapreagent", 3)
+	if(times_eaten < max_bites)
+		to_chat(user, "<span class='notice'>You take a bite of [src]. Delicious!</span>")
+	else
+		to_chat(user, "<span class='notice'>You finish eating [src].</span>")
+		qdel(src)
+
+/obj/item/soap/examine(mob/user)
+	. = ..()
+	if(!user.Adjacent(src) || !times_eaten)
+		return
+	if(times_eaten < (max_bites * 0.3))
+		. += "<span class='notice'>[src] has bite marks on it!</span>"
+	else if(times_eaten < (max_bites * 0.6))
+		. += "<span class='notice'>Big chunks of [src] have been chewed off!</span>"
+	else if(times_eaten < (max_bites * 0.9))
+		. += "<span class='notice'>Most of [src] has been gnawed away!</span>"
+	else
+		. += "<span class='notice'>[src] has been eaten down to a sliver!</span>"
 
 /obj/item/soap/attack(mob/target as mob, mob/user as mob)
-	if(target && user && ishuman(target) && ishuman(user) && !target.stat && !user.stat && user.zone_selected == "mouth" )
-		user.visible_message("<span class='warning'>\the [user] washes \the [target]'s mouth out with [name]!</span>")
+	if(target && user && ishuman(target) && ishuman(user) && !target.stat && !user.stat && user.zone_selected == "mouth")
+		user.visible_message("<span class='warning'>[user] starts washing [target]'s mouth out with [name]!</span>")
+		if(do_after(user, cleanspeed, target = target))
+			user.visible_message("<span class='warning'>[user] washes [target]'s mouth out with [name]!</span>")
+			target.reagents.add_reagent("soapreagent", 6)
 		return
 	..()
+
+/obj/item/soap/can_clean()
+	return TRUE
 
 /obj/item/soap/nanotrasen
 	desc = "A Nanotrasen brand bar of soap. Smells of plasma."
@@ -84,22 +92,27 @@
 		user.visible_message("<span class='warning'>[user] begins to smear [src] on \the [target.name].</span>")
 		if(do_after(user, cleanspeed, target = target))
 			to_chat(user, "<span class='notice'>You 'clean' \the [target.name].</span>")
-			if(istype(target, /turf/simulated))
+			if(issimulatedturf(target))
 				new /obj/effect/decal/cleanable/blood/gibs/cleangibs(target)
-			else if(istype(target,/mob/living/carbon))
+			else if(iscarbon(target))
 				for(var/obj/item/carried_item in target.contents)
-					if(!istype(carried_item, /obj/item/implant))//If it's not an implant.
+					if(!istype(carried_item, /obj/item/bio_chip))//If it's not an implant.
 						carried_item.add_mob_blood(target)//Oh yes, there will be blood...
 				var/mob/living/carbon/human/H = target
-				H.bloody_hands(target,0)
+				H.make_bloody_hands(H.get_blood_dna_list(), H.get_blood_color())
 				H.bloody_body(target)
 
 	return
 
 /obj/item/soap/deluxe
-	desc = "A deluxe Waffle Co. brand bar of soap. Smells of comdoms."
+	desc = "A luxury bar of soap. Smells of honey."
 	icon_state = "soapdeluxe"
 	cleanspeed = 40 //slightly better because deluxe -- captain gets one of these
+
+/obj/item/soap/deluxe/laundry
+	name = "laundry soap"
+	desc = "Very cheap but effective soap. Dries out the skin."
+	icon_state = "soapsoviet"
 
 /obj/item/soap/syndie
 	desc = "An untrustworthy bar of soap made of strong chemical agents that dissolve blood faster."

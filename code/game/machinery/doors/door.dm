@@ -7,21 +7,22 @@
 	opacity = TRUE
 	density = TRUE
 	layer = OPEN_DOOR_LAYER
-	power_channel = ENVIRON
+	power_channel = PW_CHANNEL_ENVIRONMENT
 	max_integrity = 350
-	armor = list(MELEE = 30, BULLET = 30, LASER = 20, ENERGY = 20, BOMB = 10, BIO = 100, RAD = 100, FIRE = 80, ACID = 70)
+	armor = list(MELEE = 30, BULLET = 30, LASER = 20, ENERGY = 20, BOMB = 10, RAD = 100, FIRE = 80, ACID = 70)
 	flags = PREVENT_CLICK_UNDER
 	damage_deflection = 10
 	var/closingLayer = CLOSED_DOOR_LAYER
 	var/visible = TRUE
-	/// Is it currently in the process of opening or closing.
-	var/operating = FALSE
+	/// Is it currently in the process of opening, closing or being tampered
+	var/operating = NONE
 	var/autoclose = FALSE
 	/// Whether the door detects things and mobs in its way and reopen or crushes them.
 	var/safe = TRUE
 	// Whether the door is bolted or not.
 	var/locked = FALSE
 	var/glass = FALSE
+	var/reinforced_glass = FALSE
 	var/welded = FALSE
 	var/normalspeed = TRUE
 	var/auto_close_time = 150
@@ -36,6 +37,8 @@
 	var/unres_sides = 0
 	//Multi-tile doors
 	var/width = 1
+	/// List. Player view blocking fillers for multi-tile doors.
+	var/list/fillers
 	//Whether nonstandard door sounds (cmag laughter) are off cooldown.
 	var/sound_ready = TRUE
 	var/sound_cooldown = 1 SECONDS
@@ -45,23 +48,26 @@
 	var/polarized_glass = FALSE
 	var/polarized_on
 
-/obj/machinery/door/New()
-	..()
-	GLOB.airlocks += src
-	update_freelook_sight()
+	/// How much this door reduces superconductivity to when closed.
+	var/superconductivity = DOOR_HEAT_TRANSFER_COEFFICIENT
 
 /obj/machinery/door/Initialize(mapload)
 	. = ..()
 	set_init_door_layer()
-	update_dir()
+	update_bounds()
+	update_freelook_sight()
 	spark_system = new /datum/effect_system/spark_spread
 	spark_system.set_up(2, 1, src)
+	// Yes I know this isnt an airlock but its required because of the dumb reason of
+	// pod doors and shutters similar using this list as well
+	GLOB.airlocks += src
 
 	//doors only block while dense though so we have to use the proc
 	real_explosion_block = explosion_block
 	explosion_block = EXPLOSION_BLOCK_PROC
 
-	air_update_turf(1)
+	update_icon()
+	recalculate_atmos_connectivity()
 
 /obj/machinery/door/proc/set_init_door_layer()
 	if(density)
@@ -71,24 +77,16 @@
 
 /obj/machinery/door/setDir(newdir)
 	..()
-	update_dir()
+	update_bounds()
 
 /obj/machinery/door/power_change()
-	..()
+	if(!..())
+		return
 	update_icon()
-
-/obj/machinery/door/proc/update_dir()
-	if(width > 1)
-		if(dir in list(EAST, WEST))
-			bound_width = width * world.icon_size
-			bound_height = world.icon_size
-		else
-			bound_width = world.icon_size
-			bound_height = width * world.icon_size
 
 /obj/machinery/door/Destroy()
 	density = FALSE
-	air_update_turf(1)
+	recalculate_atmos_connectivity()
 	update_freelook_sight()
 	GLOB.airlocks -= src
 	QDEL_NULL(spark_system)
@@ -103,9 +101,6 @@
 			return
 		if(isliving(AM))
 			var/mob/living/M = AM
-			if(world.time - M.last_bumped <= 10)
-				return	//Can bump-open one airlock per second. This is to prevent shock spam.
-			M.last_bumped = world.time
 			if(M.restrained() && !check_access(null))
 				return
 			if(M.mob_size > MOB_SIZE_TINY)
@@ -115,9 +110,6 @@
 	if(ismecha(AM))
 		var/obj/mecha/mecha = AM
 		if(density)
-			if(mecha.occupant)
-				if(world.time - mecha.occupant.last_bumped <= 10)
-					return
 			if(mecha.occupant && allowed(mecha.occupant) || check_access_list(mecha.operation_req_access))
 				if(HAS_TRAIT(src, TRAIT_CMAGGED))
 					cmag_switch(FALSE, mecha.occupant)
@@ -135,21 +127,23 @@
 	. = ..()
 	move_update_air(T)
 
-	if(width > 1)
-		if(dir in list(EAST, WEST))
-			bound_width = width * world.icon_size
-			bound_height = world.icon_size
-		else
-			bound_width = world.icon_size
-			bound_height = width * world.icon_size
+	update_bounds()
 
 /obj/machinery/door/CanPass(atom/movable/mover, turf/target, height=0)
-	if(istype(mover) && mover.checkpass(PASSGLASS))
-		return !opacity
+	if(istype(mover))
+		if(mover.checkpass(PASSDOOR) && !locked)
+			return TRUE
+		if(mover.checkpass(PASSGLASS))
+			return !opacity
 	return !density
 
-/obj/machinery/door/CanAtmosPass()
+/obj/machinery/door/CanAtmosPass(direction)
 	return !density
+
+/obj/machinery/door/get_superconductivity(direction)
+	if(density)
+		return superconductivity
+	return ..()
 
 /obj/machinery/door/proc/bumpopen(mob/user)
 	if(operating)
@@ -249,34 +243,16 @@
 /obj/machinery/door/proc/try_to_crowbar(mob/user, obj/item/I)
 	return
 
-/obj/machinery/door/proc/clean_cmag_ooze(obj/item/I, mob/user) //Emags are Engineering's problem, cmags are the janitor's problem
-	var/cleaning = FALSE
-	if(istype(I, /obj/item/reagent_containers/spray/cleaner))
-		var/obj/item/reagent_containers/spray/cleaner/C = I
-		if(C.reagents.total_volume >= C.amount_per_transfer_from_this)
-			cleaning = TRUE
-		else
-			return
-	if(istype(I, /obj/item/soap))
-		cleaning = TRUE
-
-	if(!cleaning)
-		return
-	user.visible_message("<span class='notice'>[user] starts to clean the ooze off the access panel.</span>", "<span class='notice'>You start to clean the ooze off the access panel.</span>")
-	if(do_after(user, 50, target = src))
-		user.visible_message("<span class='notice'>[user] cleans the ooze off [src].</span>", "<span class='notice'>You clean the ooze off [src].</span>")
-		REMOVE_TRAIT(src, TRAIT_CMAGGED, "clown_emag")
-
 /obj/machinery/door/attackby(obj/item/I, mob/user, params)
-	if(HAS_TRAIT(src, TRAIT_CMAGGED))
-		clean_cmag_ooze(I, user)
+	if(HAS_TRAIT(src, TRAIT_CMAGGED) && I.can_clean()) //If the cmagged door is being hit with cleaning supplies, don't open it, it's being cleaned!
+		return
 
-	if(user.a_intent != INTENT_HARM && istype(I, /obj/item/twohanded/fireaxe))
+	if(user.a_intent != INTENT_HARM && HAS_TRAIT(I, TRAIT_FORCES_OPEN_DOORS_ITEM))
 		try_to_crowbar(user, I)
-		return 1
+		return TRUE
 	else if(!(I.flags & NOBLUDGEON) && user.a_intent != INTENT_HARM)
 		try_to_activate_door(user)
-		return 1
+		return TRUE
 	return ..()
 
 /obj/machinery/door/crowbar_act(mob/user, obj/item/I)
@@ -320,7 +296,7 @@
 		return
 	flick("door_spark", src)
 	sleep(6) //The cmag doesn't automatically open doors. It inverts access, not provides it!
-	ADD_TRAIT(src, TRAIT_CMAGGED, "clown_emag")
+	ADD_TRAIT(src, TRAIT_CMAGGED, CLOWN_EMAG)
 	return TRUE
 
 //Proc for inverting access on cmagged doors."canopen" should always return the OPPOSITE of the normal result.
@@ -374,7 +350,7 @@
 			else
 				flick("doorc1", src)
 		if("deny")
-			if(!stat)
+			if(stat == CONSCIOUS)
 				flick("door_deny", src)
 
 /obj/machinery/door/proc/open()
@@ -383,17 +359,23 @@
 	if(operating)
 		return
 	SEND_SIGNAL(src, COMSIG_DOOR_OPEN)
-	operating = TRUE
+	operating = DOOR_OPENING
 	do_animate("opening")
 	set_opacity(0)
+	if(width > 1)
+		set_fillers_opacity(0)
 	sleep(5)
 	density = FALSE
+	if(width > 1)
+		set_fillers_density(FALSE)
 	sleep(5)
 	layer = initial(layer)
 	update_icon()
 	set_opacity(0)
-	operating = FALSE
-	air_update_turf(1)
+	if(width > 1)
+		set_fillers_opacity(0)
+	operating = NONE
+	recalculate_atmos_connectivity()
 	update_freelook_sight()
 	if(autoclose)
 		autoclose_in(normalspeed ? auto_close_time : auto_close_time_dangerous)
@@ -413,18 +395,22 @@
 					return
 
 	SEND_SIGNAL(src, COMSIG_DOOR_CLOSE)
-	operating = TRUE
+	operating = DOOR_CLOSING
 
 	do_animate("closing")
 	layer = closingLayer
 	sleep(5)
 	density = TRUE
+	if(width > 1)
+		set_fillers_density(TRUE)
 	sleep(5)
 	update_icon()
 	if(!glass || polarized_on)
 		set_opacity(TRUE)
-	operating = FALSE
-	air_update_turf(1)
+		if(width > 1)
+			set_fillers_opacity(TRUE)
+	operating = NONE
+	recalculate_atmos_connectivity()
 	update_freelook_sight()
 	if(safe)
 		CheckForMobs()
@@ -466,36 +452,38 @@
 		close()
 
 /obj/machinery/door/proc/autoclose_in(wait)
-	addtimer(CALLBACK(src, .proc/autoclose), wait, TIMER_UNIQUE | TIMER_NO_HASH_WAIT | TIMER_OVERRIDE)
+	addtimer(CALLBACK(src, PROC_REF(autoclose)), wait, TIMER_UNIQUE | TIMER_NO_HASH_WAIT | TIMER_OVERRIDE)
 
 /obj/machinery/door/proc/update_freelook_sight()
 	if(!glass && GLOB.cameranet)
 		GLOB.cameranet.updateVisibility(src, 0)
 
-/obj/machinery/door/BlockSuperconductivity() // All non-glass airlocks block heat, this is intended.
-	if(opacity || heat_proof)
-		return 1
-	return 0
+/obj/machinery/door/get_superconductivity(direction)
+	// Only heatproof airlocks block heat, currently only varedited doors have this
+	if(heat_proof && density)
+		return FALSE
+	return ..()
 
 /obj/machinery/door/proc/check_unres() //unrestricted sides. This overlay indicates which directions the player can access even without an ID
 	if(hasPower() && unres_sides)
+		. = list()
 		set_light(l_range = 1, l_power = 1, l_color = "#00FF00")
 		if(unres_sides & NORTH)
 			var/image/I = image(icon='icons/obj/doors/airlocks/station/overlays.dmi', icon_state="unres_n") //layer=src.layer+1
 			I.pixel_y = 32
-			add_overlay(I)
+			. += I
 		if(unres_sides & SOUTH)
 			var/image/I = image(icon='icons/obj/doors/airlocks/station/overlays.dmi', icon_state="unres_s") //layer=src.layer+1
 			I.pixel_y = -32
-			add_overlay(I)
+			. += I
 		if(unres_sides & EAST)
 			var/image/I = image(icon='icons/obj/doors/airlocks/station/overlays.dmi', icon_state="unres_e") //layer=src.layer+1
 			I.pixel_x = 32
-			add_overlay(I)
+			. += I
 		if(unres_sides & WEST)
 			var/image/I = image(icon='icons/obj/doors/airlocks/station/overlays.dmi', icon_state="unres_w") //layer=src.layer+1
 			I.pixel_x = -32
-			add_overlay(I)
+			. += I
 
 /obj/machinery/door/morgue
 	icon = 'icons/obj/doors/doormorgue.dmi'
@@ -520,3 +508,75 @@
 /obj/machinery/door/zap_act(power, zap_flags)
 	zap_flags &= ~ZAP_OBJ_DAMAGE
 	. = ..()
+
+/obj/machinery/door/CanPathfindPass(to_dir, datum/can_pass_info/pass_info)
+	if(!locateUID(pass_info.caller_uid))
+		return ..()
+	if(pass_info.pass_flags & PASSDOOR && !locked)
+		return TRUE
+	if(pass_info.pass_flags & PASSGLASS)
+		return !opacity
+	return ..()
+
+/**
+ * Checks which way the airlock is facing and adjusts the direction accordingly.
+ * For use with multi-tile airlocks.
+ */
+/obj/machinery/door/proc/get_adjusted_dir(dir)
+	if(dir in list(EAST, WEST))
+		return EAST
+	else
+		return NORTH
+
+/**
+ * Sets the bounds of the airlock. For use with multi-tile airlocks.
+ * If the airlock is multi-tile, it will set the bounds to be the size of the airlock.
+ * If the airlock doesn't already have fillers, it will create them.
+ * If the airlock already has fillers, it will move them to the correct location.
+ */
+/obj/machinery/door/proc/update_bounds()
+	if(width <= 1)
+		return
+
+	QDEL_LIST_CONTENTS(fillers)
+
+	if(dir in list(EAST, WEST))
+		bound_width = width * world.icon_size
+		bound_height = world.icon_size
+	else
+		bound_width = world.icon_size
+		bound_height = width * world.icon_size
+
+	LAZYINITLIST(fillers)
+
+	var/adjusted_dir = get_adjusted_dir(dir)
+	var/obj/last_filler = src
+	for(var/i = 1, i < width, i++)
+		var/obj/airlock_filler_object/filler
+
+		if(length(fillers) < i)
+			filler = new
+			filler.pair_airlock(src)
+			fillers.Add(filler)
+		else
+			filler = fillers[i]
+
+		filler.loc = get_step(last_filler, adjusted_dir)
+		filler.density = density
+		filler.set_opacity(opacity)
+
+		last_filler = filler
+
+/obj/machinery/door/proc/set_fillers_density(density)
+	if(!length(fillers))
+		return
+
+	for(var/obj/airlock_filler_object/filler as anything in fillers)
+		filler.density = density
+
+/obj/machinery/door/proc/set_fillers_opacity(opacity)
+	if(!length(fillers))
+		return
+
+	for(var/obj/airlock_filler_object/filler as anything in fillers)
+		filler.set_opacity(opacity)

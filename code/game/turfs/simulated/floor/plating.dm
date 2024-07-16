@@ -4,19 +4,21 @@
 	icon = 'icons/turf/floors/plating.dmi'
 	intact = FALSE
 	floor_tile = null
-	broken_states = list("damaged1", "damaged2", "damaged3", "damaged4", "damaged5")
-	burnt_states = list("floorscorched1", "floorscorched2")
 	var/unfastened = FALSE
 	footstep = FOOTSTEP_PLATING
 	barefootstep = FOOTSTEP_HARD_BAREFOOT
 	clawfootstep = FOOTSTEP_HARD_CLAW
 	heavyfootstep = FOOTSTEP_GENERIC_HEAVY
 	smoothing_groups = list(SMOOTH_GROUP_TURF)
+	real_layer = PLATING_LAYER
 
 /turf/simulated/floor/plating/Initialize(mapload)
 	. = ..()
 	icon_plating = icon_state
 	update_icon()
+
+/turf/simulated/floor/plating/get_broken_states()
+	return list("floorscorched1", "floorscorched2")
 
 /turf/simulated/floor/plating/damaged/Initialize(mapload)
 	. = ..()
@@ -25,6 +27,16 @@
 /turf/simulated/floor/plating/burnt/Initialize(mapload)
 	. = ..()
 	burn_tile()
+
+/turf/simulated/floor/plating/damaged/airless
+	oxygen = 0
+	nitrogen = 0
+	temperature = TCMB
+
+/turf/simulated/floor/plating/burnt/airless
+	oxygen = 0
+	nitrogen = 0
+	temperature = TCMB
 
 /turf/simulated/floor/plating/update_icon_state()
 	if(!broken && !burnt)
@@ -98,6 +110,12 @@
 				new /obj/item/stack/sheet/metal(src, 2)
 			return TRUE
 
+	else if(istype(C, /obj/item/storage/backpack/satchel_flat)) //if you click plating with a smuggler satchel, place it on the plating please
+		if(user.drop_item())
+			C.forceMove(src)
+
+		return TRUE
+
 /turf/simulated/floor/plating/screwdriver_act(mob/user, obj/item/I)
 	if(!I.tool_use_check(user, 0))
 		return
@@ -116,6 +134,8 @@
 		return
 	. = TRUE
 	if(!I.tool_use_check(user, 0))
+		return
+	if(user.a_intent == INTENT_HARM) // no repairing on harm intent, so you can use the welder in a fight near damaged paneling without welding your eyes out
 		return
 	if(unfastened)
 		to_chat(user, "<span class='warning'>You start removing [src], exposing space after you're done!</span>")
@@ -136,7 +156,7 @@
 	if(baseturf == /turf/space)
 		ReplaceWithLattice()
 	else
-		TerraformTurf(baseturf)
+		TerraformTurf(baseturf, keep_icon = FALSE)
 
 /turf/simulated/floor/plating/airless
 	icon_state = "plating"
@@ -148,6 +168,13 @@
 /turf/simulated/floor/plating/airless/Initialize(mapload)
 	. = ..()
 	name = "plating"
+
+/turf/simulated/floor/plating/lavaland_air
+	oxygen = LAVALAND_OXYGEN
+	nitrogen = LAVALAND_NITROGEN
+	temperature = LAVALAND_TEMPERATURE
+	atmos_mode = ATMOS_MODE_EXPOSED_TO_ENVIRONMENT
+	atmos_environment = ENVIRONMENT_LAVALAND
 
 /turf/simulated/floor/engine
 	name = "reinforced floor"
@@ -211,17 +238,36 @@
 
 /turf/simulated/floor/engine/cult/Initialize(mapload)
 	. = ..()
-	if(SSticker.mode)//only do this if the round is going..otherwise..fucking asteroid..
-		icon_state = SSticker.cultdat.cult_floor_icon_state
+	icon_state = GET_CULT_DATA(cult_floor_icon_state, initial(icon_state))
+
+/turf/simulated/floor/engine/cult/Entered(atom/A, atom/OL, ignoreRest)
+	. = ..()
+	var/counter = 0
+	for(var/obj/effect/temp_visual/cult/turf/open/floor/floor in contents)
+		if(++counter == 3)
+			return
+
+	if(!. && isliving(A))
+		addtimer(CALLBACK(src, PROC_REF(spawn_visual)), 0.2 SECONDS, TIMER_DELETE_ME)
+
+/turf/simulated/floor/engine/cult/proc/spawn_visual()
+	new /obj/effect/temp_visual/cult/turf/open/floor(src)
 
 /turf/simulated/floor/engine/cult/narsie_act()
 	return
+
+/turf/simulated/floor/engine/cult/lavaland_air
+	oxygen = LAVALAND_OXYGEN
+	nitrogen = LAVALAND_NITROGEN
+	temperature = LAVALAND_TEMPERATURE
+	atmos_mode = ATMOS_MODE_EXPOSED_TO_ENVIRONMENT
+	atmos_environment = ENVIRONMENT_LAVALAND
 
 //air filled floors; used in atmos pressure chambers
 
 /turf/simulated/floor/engine/n20
 	name = "\improper N2O floor"
-	sleeping_agent = 6000
+	sleeping_agent = 60000
 	oxygen = 0
 	nitrogen = 0
 
@@ -252,6 +298,15 @@
 	oxygen = 2644
 	nitrogen = 10580
 
+/turf/simulated/floor/engine/xenobio
+	oxygen = 0
+	temperature = 80
+	nitrogen = 100
+
+/turf/simulated/floor/engine/airless
+	oxygen = 0
+	nitrogen = 0
+	temperature = TCMB
 
 /turf/simulated/floor/engine/singularity_pull(S, current_size)
 	..()
@@ -315,17 +370,18 @@
 /turf/simulated/floor/plating/metalfoam
 	name = "foamed metal plating"
 	icon_state = "metalfoam"
-	var/metal = MFOAM_ALUMINUM
+	/// which kind of metal this will turn into
+	var/metal_kind = METAL_FOAM_ALUMINUM
 
 /turf/simulated/floor/plating/metalfoam/iron
 	icon_state = "ironfoam"
-	metal = MFOAM_IRON
+	metal_kind = METAL_FOAM_IRON
 
 /turf/simulated/floor/plating/metalfoam/update_icon_state()
-	switch(metal)
-		if(MFOAM_ALUMINUM)
+	switch(metal_kind)
+		if(METAL_FOAM_ALUMINUM)
 			icon_state = "metalfoam"
-		if(MFOAM_IRON)
+		if(METAL_FOAM_IRON)
 			icon_state = "ironfoam"
 
 /turf/simulated/floor/plating/metalfoam/attackby(obj/item/C, mob/user, params)
@@ -335,7 +391,7 @@
 	if(istype(C) && C.force)
 		user.changeNext_move(CLICK_CD_MELEE)
 		user.do_attack_animation(src)
-		var/smash_prob = max(0, C.force*17 - metal*25) // A crowbar will have a 60% chance of a breakthrough on alum, 35% on iron
+		var/smash_prob = max(0, C.force * 17 - metal_kind * 25) // A crowbar will have a 60% chance of a breakthrough on alum, 35% on iron
 		if(prob(smash_prob))
 			// YAR BE CAUSIN A HULL BREACH
 			visible_message("<span class='danger'>[user] smashes through \the [src] with \the [C]!</span>")
@@ -349,7 +405,7 @@
 		M.visible_message("<span class='notice'>[M] nudges \the [src].</span>")
 	else
 		if(M.attack_sound)
-			playsound(loc, M.attack_sound, 50, 1, 1)
+			playsound(loc, M.attack_sound, 50, TRUE, 1)
 		M.visible_message("<span class='danger'>\The [M] [M.attacktext] [src]!</span>")
 		smash(src)
 

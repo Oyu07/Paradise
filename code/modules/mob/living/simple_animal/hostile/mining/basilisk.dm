@@ -28,7 +28,6 @@
 	a_intent = INTENT_HARM
 	speak_emote = list("chitters")
 	attack_sound = 'sound/weapons/bladeslice.ogg'
-	vision_range = 2
 	aggro_vision_range = 9
 	turns_per_move = 5
 	gold_core_spawnable = HOSTILE_SPAWN
@@ -43,6 +42,12 @@
 	nodamage = TRUE
 	flag = ENERGY
 	temperature = 50
+
+/obj/item/projectile/temp/basilisk/on_hit(atom/target, blocked)
+	..()
+	if(isrobot(target))
+		var/mob/living/silicon/robot/cyborg = target
+		cyborg.apply_damage(35, STAMINA)
 
 /mob/living/simple_animal/hostile/asteroid/basilisk/GiveTarget(new_target)
 	if(..()) //we have a target
@@ -82,15 +87,6 @@
 	loot = list()
 	butcher_results = list(/obj/item/stack/ore/diamond = 2, /obj/item/stack/sheet/sinew = 2, /obj/item/stack/sheet/bone = 1)
 
-/mob/living/simple_animal/hostile/asteroid/basilisk/watcher/random/Initialize(mapload)
-	. = ..()
-	if(prob(1))
-		if(prob(75))
-			new /mob/living/simple_animal/hostile/asteroid/basilisk/watcher/magmawing(loc)
-		else
-			new /mob/living/simple_animal/hostile/asteroid/basilisk/watcher/icewing(loc)
-		return INITIALIZE_HINT_QDEL
-
 /mob/living/simple_animal/hostile/asteroid/basilisk/watcher/magmawing
 	name = "magmawing watcher"
 	desc = "When raised very close to lava, some watchers adapt to the extreme heat and use lava as both a weapon and wings."
@@ -105,7 +101,7 @@
 	light_color = LIGHT_COLOR_LAVA
 	projectiletype = /obj/item/projectile/temp/basilisk/magmawing
 	crusher_loot = /obj/item/crusher_trophy/blaster_tubes/magma_wing
-	crusher_drop_mod = 60
+	crusher_drop_mod = 100 //These things are extremely rare (1/133 per spawner). You shouldn't have to hope for another stroke of luck to get it's trophy after finding it
 
 /mob/living/simple_animal/hostile/asteroid/basilisk/watcher/icewing
 	name = "icewing watcher"
@@ -119,7 +115,7 @@
 	projectiletype = /obj/item/projectile/temp/basilisk/icewing
 	butcher_results = list(/obj/item/stack/ore/diamond = 5, /obj/item/stack/sheet/bone = 1) //No sinew; the wings are too fragile to be usable
 	crusher_loot = /obj/item/crusher_trophy/watcher_wing/ice_wing
-	crusher_drop_mod = 30
+	crusher_drop_mod = 100 //These things are extremely rare (1/400 per spawner). You shouldn't have to hope for another stroke of luck to get it's trophy after finding it
 
 /obj/item/projectile/temp/basilisk/magmawing
 	name = "scorching blast"
@@ -128,14 +124,7 @@
 	damage_type = BURN
 	nodamage = FALSE
 	temperature = 500 //Heats you up!
-
-/obj/item/projectile/temp/basilisk/magmawing/on_hit(atom/target, blocked = FALSE)
-	. = ..()
-	if(.)
-		var/mob/living/L = target
-		if(istype(L))
-			L.adjust_fire_stacks(0.1)
-			L.IgniteMob()
+	immolate = 1
 
 /obj/item/projectile/temp/basilisk/icewing
 	damage = 5

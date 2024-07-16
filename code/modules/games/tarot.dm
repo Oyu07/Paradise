@@ -15,9 +15,9 @@
 
 /obj/item/deck/tarot/deckshuffle()
 	var/mob/living/user = usr
-	if(cooldown < world.time - 5 SECONDS)
+	if(cooldown < world.time - 1 SECONDS)
 		var/list/newcards = list()
-		while(cards.len)
+		while(length(cards))
 			var/datum/playingcard/P = pick(cards)
 			P.name = replacetext(P.name," reversed","")
 			if(prob(50))
@@ -28,3 +28,4 @@
 		playsound(user, 'sound/items/cardshuffle.ogg', 50, 1)
 		user.visible_message("<span class='notice'>[user] shuffles [src].</span>", "<span class='notice'>You shuffle [src].</span>")
 		cooldown = world.time
+

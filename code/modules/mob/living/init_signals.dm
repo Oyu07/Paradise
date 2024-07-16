@@ -1,28 +1,31 @@
 /// Called on [/mob/living/Initialize(mapload)], for the mob to register to relevant signals.
 /mob/living/proc/register_init_signals()
-	RegisterSignal(src, SIGNAL_ADDTRAIT(TRAIT_KNOCKEDOUT), .proc/on_knockedout_trait_gain)
-	RegisterSignal(src, SIGNAL_REMOVETRAIT(TRAIT_KNOCKEDOUT), .proc/on_knockedout_trait_loss)
+	RegisterSignal(src, SIGNAL_ADDTRAIT(TRAIT_KNOCKEDOUT), PROC_REF(on_knockedout_trait_gain))
+	RegisterSignal(src, SIGNAL_REMOVETRAIT(TRAIT_KNOCKEDOUT), PROC_REF(on_knockedout_trait_loss))
 
-	RegisterSignal(src, SIGNAL_ADDTRAIT(TRAIT_FAKEDEATH), .proc/on_fakedeath_trait_gain)
-	RegisterSignal(src, SIGNAL_REMOVETRAIT(TRAIT_FAKEDEATH), .proc/on_fakedeath_trait_loss)
+	RegisterSignal(src, SIGNAL_ADDTRAIT(TRAIT_FAKEDEATH), PROC_REF(on_fakedeath_trait_gain))
+	RegisterSignal(src, SIGNAL_REMOVETRAIT(TRAIT_FAKEDEATH), PROC_REF(on_fakedeath_trait_loss))
 
-	RegisterSignal(src, SIGNAL_ADDTRAIT(TRAIT_IMMOBILIZED), .proc/on_immobilized_trait_gain)
-	RegisterSignal(src, SIGNAL_REMOVETRAIT(TRAIT_IMMOBILIZED), .proc/on_immobilized_trait_loss)
+	RegisterSignal(src, SIGNAL_ADDTRAIT(TRAIT_IMMOBILIZED), PROC_REF(on_immobilized_trait_gain))
+	RegisterSignal(src, SIGNAL_REMOVETRAIT(TRAIT_IMMOBILIZED), PROC_REF(on_immobilized_trait_loss))
 
-	RegisterSignal(src, SIGNAL_ADDTRAIT(TRAIT_FLOORED), .proc/on_floored_trait_gain)
-	RegisterSignal(src, SIGNAL_REMOVETRAIT(TRAIT_FLOORED), .proc/on_floored_trait_loss)
+	RegisterSignal(src, SIGNAL_ADDTRAIT(TRAIT_FLOORED), PROC_REF(on_floored_trait_gain))
+	RegisterSignal(src, SIGNAL_REMOVETRAIT(TRAIT_FLOORED), PROC_REF(on_floored_trait_loss))
 
-	RegisterSignal(src, SIGNAL_ADDTRAIT(TRAIT_HANDS_BLOCKED), .proc/on_handsblocked_trait_gain)
-	RegisterSignal(src, SIGNAL_REMOVETRAIT(TRAIT_HANDS_BLOCKED), .proc/on_handsblocked_trait_loss)
+	RegisterSignal(src, SIGNAL_ADDTRAIT(TRAIT_FORCED_STANDING), PROC_REF(on_forced_standing_trait_gain))
+	RegisterSignal(src, SIGNAL_REMOVETRAIT(TRAIT_FORCED_STANDING), PROC_REF(on_forced_standing_trait_loss))
 
-	RegisterSignal(src, SIGNAL_ADDTRAIT(TRAIT_UI_BLOCKED), .proc/on_ui_blocked_trait_gain)
-	RegisterSignal(src, SIGNAL_REMOVETRAIT(TRAIT_UI_BLOCKED), .proc/on_ui_blocked_trait_loss)
+	RegisterSignal(src, SIGNAL_ADDTRAIT(TRAIT_HANDS_BLOCKED), PROC_REF(on_handsblocked_trait_gain))
+	RegisterSignal(src, SIGNAL_REMOVETRAIT(TRAIT_HANDS_BLOCKED), PROC_REF(on_handsblocked_trait_loss))
 
-	RegisterSignal(src, SIGNAL_ADDTRAIT(TRAIT_CANNOT_PULL), .proc/on_pull_blocked_trait_gain)
-	RegisterSignal(src, SIGNAL_REMOVETRAIT(TRAIT_CANNOT_PULL), .proc/on_pull_blocked_trait_loss)
+	RegisterSignal(src, SIGNAL_ADDTRAIT(TRAIT_UI_BLOCKED), PROC_REF(on_ui_blocked_trait_gain))
+	RegisterSignal(src, SIGNAL_REMOVETRAIT(TRAIT_UI_BLOCKED), PROC_REF(on_ui_blocked_trait_loss))
 
-	RegisterSignal(src, SIGNAL_ADDTRAIT(TRAIT_RESTRAINED), .proc/on_restrained_trait_gain)
-	RegisterSignal(src, SIGNAL_REMOVETRAIT(TRAIT_RESTRAINED), .proc/on_restrained_trait_loss)
+	RegisterSignal(src, SIGNAL_ADDTRAIT(TRAIT_CANNOT_PULL), PROC_REF(on_pull_blocked_trait_gain))
+	RegisterSignal(src, SIGNAL_REMOVETRAIT(TRAIT_CANNOT_PULL), PROC_REF(on_pull_blocked_trait_loss))
+
+	RegisterSignal(src, SIGNAL_ADDTRAIT(TRAIT_RESTRAINED), PROC_REF(on_restrained_trait_gain))
+	RegisterSignal(src, SIGNAL_REMOVETRAIT(TRAIT_RESTRAINED), PROC_REF(on_restrained_trait_loss))
 
 /// Called when [TRAIT_KNOCKEDOUT] is added to the mob.
 /mob/living/proc/on_knockedout_trait_gain(datum/source)
@@ -50,6 +53,8 @@
 /// Called when [TRAIT_FLOORED] is added to the mob.
 /mob/living/proc/on_floored_trait_gain(datum/source)
 	SIGNAL_HANDLER
+	if(HAS_TRAIT(src, TRAIT_FORCED_STANDING))
+		return // Don't go horizontal if mob has forced standing trait.
 	mobility_flags &= ~MOBILITY_STAND
 	on_floored_start()
 
@@ -67,6 +72,21 @@
 /mob/living/proc/on_floored_end()
 	if(!resting)
 		stand_up(FALSE)
+
+	/// Called when [TRAIT_FORCED_STANDING] is added to the mob.
+/mob/living/proc/on_forced_standing_trait_gain(datum/source)
+	SIGNAL_HANDLER
+
+	set_body_position(STANDING_UP)
+
+/// Called when [TRAIT_FORCED_STANDING] is removed from the mob.
+/mob/living/proc/on_forced_standing_trait_loss(datum/source)
+	SIGNAL_HANDLER
+
+	if(HAS_TRAIT(src, TRAIT_FLOORED))
+		fall()
+	else if(resting)
+		lay_down()
 
 /// Called when [TRAIT_HANDS_BLOCKED] is added to the mob.
 /mob/living/proc/on_handsblocked_trait_gain(datum/source)
@@ -128,9 +148,15 @@
 /mob/living/proc/on_fakedeath_trait_gain(datum/source)
 	SIGNAL_HANDLER
 	ADD_TRAIT(src, TRAIT_KNOCKEDOUT, TRAIT_FAKEDEATH)
+	apply_status_effect(STATUS_EFFECT_REVIVABLE)
+
+/mob/living/carbon/human/on_fakedeath_trait_gain(datum/source)
+	. = ..()
+	stop_tail_wagging()
 
 /// Called when [TRAIT_FAKEDEATH] is removed from the mob.
 /mob/living/proc/on_fakedeath_trait_loss(datum/source)
 	SIGNAL_HANDLER
 	REMOVE_TRAIT(src, TRAIT_KNOCKEDOUT, TRAIT_FAKEDEATH)
+	remove_status_effect(STATUS_EFFECT_REVIVABLE)
 

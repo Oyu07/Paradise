@@ -12,9 +12,9 @@
 	/// Completing every contract at a given difficulty will always result in a sum of TC greater or equal than the difficulty's threshold.
 	/// Structure: EXTRACTION_DIFFICULTY_(EASY|MEDIUM|HARD) => number
 	var/difficulty_tc_thresholds = list(
-		EXTRACTION_DIFFICULTY_EASY = 20,
-		EXTRACTION_DIFFICULTY_MEDIUM = 30,
-		EXTRACTION_DIFFICULTY_HARD = 40,
+		EXTRACTION_DIFFICULTY_EASY = 100,
+		EXTRACTION_DIFFICULTY_MEDIUM = 150,
+		EXTRACTION_DIFFICULTY_HARD = 200,
 	)
 	/// Maximum variation a single contract's TC reward can have upon generation.
 	/// In other words: final_reward = CEILING((tc_threshold / num_contracts) * (1 - (rand(0, 100) / 100) * tc_variation), 1)
@@ -136,16 +136,24 @@
 	completed_contracts++
 	reward_tc_available += tc
 	rep += rep_per_completion
-	owner?.initial_account?.credit(creds, pick(list(
-		"CONGRATULATIONS. You are the 10,000th visitor of SquishySlimes.squish. Please find attached your [creds] credits.",
-		"Congratulations on winning your bet in the latest Clown vs. Mime match! Your account was credited with [creds] credits.",
-		"Deer fund beneficiary, We have please to imform you that overdue fund payments has finally is approved and yuor account credited with [creds] creadits.",
-		"Hey bro. How's it going? You bought me a beer a long time ago and I want to pay you back with [creds] creds. Enjoy!",
-		"Thank you for your initial investment of 500 credits! We have credited your account with [creds] as a token of appreciation.",
-		"Your refund request for 100 Dr. Maxman pills with the reason \"I need way more than 100 pills!\" has been received. We have credited your account with [creds] credits.",
-		"Your refund request for your WetSkrell.nt subscription has been received. We have credited your account with [creds] credits.",
-	)))
-	// Clean up
+	var/notify_text = pick("CONGRATULATIONS. You are the 10,000th visitor of SquishySlimes.squish. Please find attached your [creds] credits.",
+						"Congratulations on winning your bet in the latest Clown vs. Mime match! Your account was credited with [creds] credits.",
+						"Deer fund beneficiary, We have please to imform you that overdue fund payments has finally is approved and yuor account credited with [creds] creadits.",
+						"Hey bro. How's it going? You bought me a beer a long time ago and I want to pay you back with [creds] creds. Enjoy!",
+						"Thank you for your initial investment of 500 credits! We have credited your account with [creds] as a token of appreciation.",
+						"Your refund request for 100 Dr. Maxman pills with the reason \"I need way more than 100 pills!\" has been received. We have credited your account with [creds] credits.",
+						"Your refund request for your WetSkrell.nt subscription has been received. We have credited your account with [creds] credits.",
+					)
+	var/transaction_person
+	if(prob(50))
+		transaction_person = capitalize(pick(GLOB.first_names_female)) + " " + capitalize(pick(GLOB.last_names))
+	else
+		transaction_person = capitalize(pick(GLOB.first_names_male)) + " " + capitalize(pick(GLOB.last_names))
+	//we want to make this transfer look real as possible, only if someone is really really closely looking at it will they notic the transaction person isn't real
+	if(GLOB.station_money_database.credit_account(owner?.initial_account, creds, "Transfer From [transaction_person]", "NanoBank Transfer Services", FALSE))
+		if(LAZYLEN(owner.initial_account.associated_nanobank_programs))
+			for(var/datum/data/pda/app/nanobank/program as anything in owner.initial_account.associated_nanobank_programs)
+				program.notify(notify_text, TRUE)
 	current_contract = null
 
 /**

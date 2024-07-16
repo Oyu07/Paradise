@@ -17,16 +17,15 @@
 		if(istype(W, /obj/item/gun/energy/plasmacutter))
 			playsound(src, W.usesound, 100, 1)
 			user.visible_message("[user] is slicing apart the [name]...", \
-								 "<span class='notice'>You are slicing apart the [name]...</span>")
+								"<span class='notice'>You are slicing apart the [name]...</span>")
 			if(do_after(user, 40 * W.toolspeed, target = src))
 				if(!loc)
 					return
 				user.visible_message("[user] slices apart the [name].", \
-									 "<span class='notice'>You slice apart the [name].</span>")
+									"<span class='notice'>You slice apart the [name].</span>")
 				deconstruct(TRUE)
 			return
 	return ..()
-
 
 /obj/structure/statue/welder_act(mob/user, obj/item/I)
 	if(anchored)
@@ -39,12 +38,11 @@
 		WELDER_SLICING_SUCCESS_MESSAGE
 		deconstruct(TRUE)
 
-
 /obj/structure/statue/attack_hand(mob/living/user)
 	user.changeNext_move(CLICK_CD_MELEE)
 	add_fingerprint(user)
 	user.visible_message("[user] rubs some dust off from the [name]'s surface.", \
-						 "<span class='notice'>You rub some dust off from the [name]'s surface.</span>")
+						"<span class='notice'>You rub some dust off from the [name]'s surface.</span>")
 
 /obj/structure/statue/deconstruct(disassembled = TRUE)
 	if(!(flags & NODECONSTRUCT))
@@ -125,11 +123,11 @@
 	..()
 
 /obj/structure/statue/plasma/attackby(obj/item/W, mob/user, params)
-	if(is_hot(W) > 300)//If the temperature of the object is over 300, then ignite
+	if(W.get_heat() > 300)//If the temperature of the object is over 300, then ignite
 		message_admins("[key_name_admin(user)] ignited a plasma statue at [COORD(loc)]")
 		log_game("[key_name(user)] ignited plasma a statue at [COORD(loc)]")
 		investigate_log("[key_name(user)] ignited a plasma statue at [COORD(loc)]", "atmos")
-		ignite(is_hot(W))
+		ignite(W.get_heat())
 		return
 	return ..()
 
@@ -203,6 +201,14 @@
 	name = "statue of a medical cyborg"
 	icon_state = "medborg"
 
+/obj/structure/statue/silver/corgi
+	name = "statue of a corgi"
+	icon_state = "corgi"
+
+/obj/structure/statue/silver/monkey
+	name = "statue of a monkey"
+	icon_state = "monkey"
+
 /obj/structure/statue/diamond
 	max_integrity = 1000
 	material_drop_type = /obj/item/stack/sheet/mineral/diamond
@@ -258,11 +264,13 @@
 	desc = "A cheap statue of sandstone for a greyshirt."
 	icon_state = "assist"
 
-/obj/structure/statue/sandstone/venus //call me when we add marble i guess
+/// call me when we add marble i guess
+/obj/structure/statue/sandstone/venus
 	name = "statue of a pure maiden"
 	desc = "An ancient marble statue. The subject is depicted with a floor-length braid and is wielding a toolbox. By Jove, it's easily the most gorgeous depiction of a woman you've ever seen. The artist must truly be a master of his craft. Shame about the broken arm, though."
 	icon = 'icons/obj/statuelarge.dmi'
 	icon_state = "venus"
+	oreAmount = 20
 
 /obj/structure/statue/tranquillite
 	max_integrity = 300
@@ -284,25 +292,27 @@
 		return
 	setDir(turn(dir, 90))
 
-/obj/structure/statue/kidanstatue
-	name = "Obsidian Kidan warrior statue"
-	desc = "A beautifully carved and menacing statue of a Kidan warrior made out of obsidian. It looks very heavy."
+/obj/structure/statue/plastitanium
+	max_integrity = 600
+	material_drop_type = /obj/item/stack/sheet/mineral/plastitanium
+
+/obj/structure/statue/plastitanium/kidanstatue
+	name = "kidan warrior statue"
+	desc = "A beautifully carved and menacing statue of a Kidan warrior made out of plastitanium. It looks very heavy."
 	icon_state = "kidan"
-	anchored = TRUE
-	oreAmount = 0
 
 /obj/structure/statue/chickenstatue
-	name = "Bronze Chickenman Statue"
+	name = "bronze chickenman statue"
 	desc = "An antique and oriental-looking statue of a Chickenman made of bronze."
 	icon_state = "chicken"
 	anchored = TRUE
 	oreAmount = 0
 
 /obj/structure/statue/russian_mulebot
+	name = "OXENbot"
 	desc = "Like a MULEbot, but more Russian and less functional.";
 	icon = 'icons/obj/aibots.dmi';
 	icon_state = "mulebot0";
-	name = "OXENbot"
 	anchored = TRUE
 	oreAmount = 10
 
@@ -321,7 +331,7 @@
 	desc = "Just like the ones you remember from childhood!"
 
 /obj/structure/snowman/built/Destroy()
-	new /obj/item/reagent_containers/food/snacks/grown/carrot(drop_location())
+	new /obj/item/food/snacks/grown/carrot(drop_location())
 	new /obj/item/grown/log(drop_location())
 	new /obj/item/grown/log(drop_location())
 	return ..()
@@ -338,3 +348,80 @@
 	..()
 	qdel(src)
 
+/obj/structure/statue/cyberiad
+	name = "NSS Cyberiad"
+	desc = "A giant model of the Cyberiad science station. Judging by the differences in design, the station has been rebuilt several times."
+	icon = 'icons/obj/station_statue.dmi'
+	icon_state = "center"
+	flags = NODECONSTRUCT
+	anchored = TRUE
+	max_integrity = 500
+	oreAmount = 0
+
+/obj/structure/statue/cyberiad/Destroy()
+	. = ..()
+	// Delete all the nearby cyberiad statue parts
+	for(var/obj/structure/statue/cyberiad/bigass_statue in range(2))
+		qdel(bigass_statue)
+
+// Top layer of the statue is not dense
+/obj/structure/statue/cyberiad/north
+	icon_state = "north"
+	density = FALSE
+	layer = ABOVE_ALL_MOB_LAYER
+
+/obj/structure/statue/cyberiad/north/west
+	icon_state = "nw"
+
+/obj/structure/statue/cyberiad/north/east
+	icon_state = "ne"
+
+/obj/structure/statue/cyberiad/north/Initialize(mapload)
+	. = ..()
+	if(GetExactComponent(/datum/component/largetransparency)) //already have it, lets yeet
+		return
+	AddComponent(/datum/component/largetransparency, -1, -2, 2, 2)
+
+// Adds transparency to said top layer when the player gets behind or near it
+/obj/structure/statue/cyberiad/north/west/Initialize(mapload)
+	AddComponent(/datum/component/largetransparency, 0, -2, 2, 2)
+	return ..()
+
+/obj/structure/statue/cyberiad/north/east/Initialize(mapload)
+	AddComponent(/datum/component/largetransparency, -2, -2, 2, 2)
+	return ..()
+
+/obj/structure/statue/cyberiad/center
+	icon_state = "center"
+	density = FALSE
+	layer = ABOVE_ALL_MOB_LAYER
+
+/obj/structure/statue/cyberiad/center/west
+	icon_state = "west"
+
+/obj/structure/statue/cyberiad/center/east
+	icon_state = "east"
+
+/obj/structure/statue/cyberiad/center/Initialize(mapload)
+	. = ..()
+	if(GetExactComponent(/datum/component/largetransparency)) //already have it, lets yeet
+		return
+	AddComponent(/datum/component/largetransparency, -1, -1, 2, 2)
+
+// Adds transparency to said top layer when the player gets behind or near it
+/obj/structure/statue/cyberiad/center/west/Initialize(mapload)
+	AddComponent(/datum/component/largetransparency, 0, -1, 2, 2)
+	return ..()
+
+/obj/structure/statue/cyberiad/center/east/Initialize(mapload)
+	AddComponent(/datum/component/largetransparency, -2, -1, 2, 2)
+	return ..()
+
+/obj/structure/statue/cyberiad/south
+	icon_state = "south"
+
+/obj/structure/statue/cyberiad/south/west
+	icon_state = "sw"
+
+/obj/structure/statue/cyberiad/south/east
+	icon_state = "se"

@@ -43,6 +43,10 @@
 		to_chat(user, "<span class='warning'>It appears to be broken.</span>")
 		return
 
+	if(istype(W, /obj/item/card/id/guest))
+		to_chat(user, "<span class='warning'>Invalid identification card.</span>")
+		return
+
 	var/obj/item/card/id/I = W
 	if(!I || !I.registered_name)
 		return
@@ -51,6 +55,8 @@
 		to_chat(user, "<span class='notice'>You can't reach the lock from inside.</span>")
 
 	else if(allowed(user) || !registered_name || (istype(I) && (registered_name == I.registered_name)))
+		cut_overlays()
+
 		//they can open all lockers, or nobody owns this, or they own this locker
 		locked = !locked
 		if(locked)
@@ -65,4 +71,4 @@
 			registered_name = I.registered_name
 			desc = "Owned by [I.registered_name]."
 	else
-		to_chat(user, "<span class='warning'>Access Denied</span>")
+		to_chat(user, "<span class='warning'>Access denied.</span>")

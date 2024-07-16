@@ -2,8 +2,6 @@
 	holder_type = /obj/machinery/suit_storage_unit
 	wire_count = 8
 	proper_name = "Suit storage unit"
-	window_x = 350
-	window_y = 85
 
 /datum/wires/suitstorage/New(atom/_holder)
 	wires = list(WIRE_IDSCAN, WIRE_ELECTRIFY, WIRE_SAFETY, WIRE_SSU_UV)
@@ -55,7 +53,7 @@
 			A.shocked = !A.shocked
 			if(A.shocked)
 				A.shock(usr, 100)
-				addtimer(CALLBACK(A, /obj/machinery/suit_storage_unit/.proc/check_electrified_callback), 5 SECONDS)
+				addtimer(CALLBACK(A, TYPE_PROC_REF(/obj/machinery/suit_storage_unit, check_electrified_callback)), 5 SECONDS)
 
 		if(WIRE_SSU_UV)
 			A.uv_super = !A.uv_super

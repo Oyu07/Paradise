@@ -12,6 +12,9 @@
 	name = "Green Terror spider"
 	desc = "An ominous-looking green spider. It has a small egg-sac attached to it, and dried blood stains on its carapace."
 	spider_role_summary = "Average melee spider that webs its victims and lays more spider eggs"
+	spider_intro_text = "As a Green Terror Spider, your role is to lay and protect spider eggs so they can hatch and mature into more spiders. \
+	You can lay a new set of eggs for every 2 corpses you web, so work with other spiders to collect as many bodies as you can. \
+	To aid with this you have moderate health and deal moderate damage, with your bite and webs blurring the vision of any victims."
 	ai_target_method = TS_DAMAGE_BRUTE
 	icon_state = "terror_green"
 	icon_living = "terror_green"
@@ -45,10 +48,10 @@
 		eggtypes += TS_DESC_BLACK
 	var/eggtype = pick(eggtypes)
 	if(client)
-		eggtype = input("What kind of eggs?") as null|anything in eggtypes
+		eggtype = tgui_input_list(src, "What kind of eggs?", "Egg Laying", eggtypes)
 		if(!(eggtype in eggtypes))
 			to_chat(src, "<span class='danger'>Unrecognized egg type.</span>")
-			return 0
+			return FALSE
 	if(!isturf(loc))
 		// This has to be checked after we ask the user what egg type. Otherwise they could trigger prompt THEN move into a vent.
 		to_chat(src, "<span class='danger'>Eggs can only be laid while standing on a floor.</span>")

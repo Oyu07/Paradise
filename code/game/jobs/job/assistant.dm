@@ -8,7 +8,7 @@
 	department_head = list("Head of Personnel")
 	selection_color = "#dddddd"
 	access = list()			//See /datum/job/assistant/get_access()
-	minimal_access = list()	//See /datum/job/assistant/get_access()
+	alt_titles = list("Off-Duty", "Retired", "Intern")
 	outfit = /datum/outfit/job/assistant
 
 /datum/job/assistant/get_access()
@@ -23,5 +23,6 @@
 
 	uniform = /obj/item/clothing/under/color/random
 	shoes = /obj/item/clothing/shoes/black
+	id = /obj/item/card/id/assistant
 
 

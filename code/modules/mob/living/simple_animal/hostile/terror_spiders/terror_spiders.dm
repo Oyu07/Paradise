@@ -1,12 +1,13 @@
+
 GLOBAL_LIST_EMPTY(ts_ckey_blacklist)
 GLOBAL_VAR_INIT(ts_count_dead, 0)
-GLOBAL_VAR_INIT(ts_count_alive_awaymission, 0)
 GLOBAL_VAR_INIT(ts_count_alive_station, 0)
 GLOBAL_VAR_INIT(ts_death_last, 0)
 GLOBAL_VAR_INIT(ts_death_window, 9000) // 15 minutes
 GLOBAL_LIST_EMPTY(ts_spiderlist)
 GLOBAL_LIST_EMPTY(ts_egg_list)
 GLOBAL_LIST_EMPTY(ts_spiderling_list)
+GLOBAL_LIST_EMPTY(ts_infected_list)
 
 // --------------------------------------------------------------------------------
 // --------------------- TERROR SPIDERS: DEFAULTS ---------------------------------
@@ -54,7 +55,7 @@ GLOBAL_LIST_EMPTY(ts_spiderling_list)
 	// '2' converts to 4.5, or 2.2 tiles/sec.
 
 	// Ventcrawling
-	ventcrawler = 1 // allows player ventcrawling
+	ventcrawler = VENTCRAWLER_NUDE // allows player ventcrawling
 	var/ai_ventcrawls = TRUE
 	var/idle_ventcrawl_chance = 15
 	var/freq_ventcrawl_combat = 1800 // 3 minutes
@@ -120,6 +121,7 @@ GLOBAL_LIST_EMPTY(ts_spiderling_list)
 	var/spider_opens_doors = 1 // all spiders can open firedoors (they have no security). 1 = can open depowered doors. 2 = can open powered doors
 	faction = list("terrorspiders")
 	var/spider_role_summary = "UNDEFINED"
+	var/spider_intro_text = "If you are seeing this, please alert the coders"
 	var/spider_placed = FALSE
 
 	// AI variables designed for use in procs
@@ -278,8 +280,8 @@ GLOBAL_LIST_EMPTY(ts_spiderling_list)
 	msg_terrorspiders("[src] has grown in [get_area(src)].")
 	GLOB.ts_count_alive_station++
 	// after 3 seconds, assuming nobody took control of it yet, offer it to ghosts.
-	addtimer(CALLBACK(src, .proc/CheckFaction), 20)
-	addtimer(CALLBACK(src, .proc/announcetoghosts), 30)
+	addtimer(CALLBACK(src, PROC_REF(CheckFaction)), 20)
+	addtimer(CALLBACK(src, PROC_REF(announcetoghosts)), 30)
 	var/datum/atom_hud/U = GLOB.huds[DATA_HUD_MEDICAL_ADVANCED]
 	U.add_hud_to(src)
 	spider_creation_time = world.time
@@ -291,7 +293,7 @@ GLOBAL_LIST_EMPTY(ts_spiderling_list)
 		notify_ghosts("[src] (player controlled) has appeared in [get_area(src)].")
 	else if(ai_playercontrol_allowtype)
 		var/image/alert_overlay = image('icons/mob/terrorspider.dmi', icon_state)
-		notify_ghosts("[src] has appeared in [get_area(src)].", enter_link = "<a href=?src=[UID()];activate=1>(Click to control)</a>", source = src, alert_overlay = alert_overlay, action = NOTIFY_ATTACK)
+		notify_ghosts("[src] has appeared in [get_area(src)].", enter_link = "<a href=byond://?src=[UID()];activate=1>(Click to control)</a>", source = src, alert_overlay = alert_overlay, action = NOTIFY_ATTACK)
 
 /mob/living/simple_animal/hostile/poison/terror_spider/Destroy()
 	GLOB.ts_spiderlist -= src
@@ -339,6 +341,13 @@ GLOBAL_LIST_EMPTY(ts_spiderling_list)
 		GLOB.ts_death_last = world.time
 		GLOB.ts_count_alive_station--
 
+/mob/living/simple_animal/hostile/poison/terror_spider/proc/give_intro_text()
+	to_chat(src, "<center><span class='userdanger'>You are a Terror Spider!</span></center>")
+	to_chat(src, "<center>Work with other terror spiders in your hive to eliminate the crew and claim the station as your nest!</center>")
+	to_chat(src, "<center><span class='danger'>Remember to follow the orders of higher tier spiders, such as princesses or queens.</span></center><br>")
+	to_chat(src, "<center><span class='big'>[spider_intro_text]</span></center><br>")
+	to_chat(src, "<center><span class='motd'>For more information, check the wiki page: ([GLOB.configuration.url.wiki_url]/index.php/Terror_Spider)</span></center>")
+
 /mob/living/simple_animal/hostile/poison/terror_spider/death(gibbed)
 	if(can_die())
 		if(!gibbed)
@@ -368,7 +377,7 @@ GLOBAL_LIST_EMPTY(ts_spiderling_list)
 			to_chat(T, "<span class='terrorspider'>TerrorSense: [msgtext]</span>")
 
 /mob/living/simple_animal/hostile/poison/terror_spider/proc/CheckFaction()
-	if(faction.len != 2 || (!("terrorspiders" in faction)) || master_commander != null)
+	if(length(faction) != 2 || (!("terrorspiders" in faction)) || master_commander != null)
 		to_chat(src, "<span class='userdanger'>Your connection to the hive mind has been severed!</span>")
 		stack_trace("Terror spider with incorrect faction list at: [atom_loc_line(src)]")
 		gib()
@@ -407,13 +416,14 @@ GLOBAL_LIST_EMPTY(ts_spiderling_list)
 		for(var/obj/structure/spider/S in range(1, get_turf(src)))
 			return S
 
-/mob/living/simple_animal/hostile/poison/terror_spider/Stat()
-	..()
+/mob/living/simple_animal/hostile/poison/terror_spider/get_status_tab_items()
+	var/list/status_tab_data = ..()
+	. = status_tab_data
 	// Determines what shows in the "Status" tab for player-controlled spiders. Used to help players understand spider health regeneration mechanics.
 	// Uses <font color='#X'> because the status panel does NOT accept <span class='X'>.
-	if(statpanel("Status") && ckey && stat == CONSCIOUS)
+	if(ckey && stat == CONSCIOUS)
 		if(degenerate)
-			stat(null, "<font color='#eb4034'>Hivemind Connection Severed! Dying...</font>") // color=red
+			status_tab_data[++status_tab_data.len] = list("Hivemind Connection Severed!", "<font color='#eb4034'>Dying...</font>") // color=red
 			return
 		if(health != maxHealth)
 			var/hp_points_per_second = 0
@@ -431,7 +441,7 @@ GLOBAL_LIST_EMPTY(ts_spiderling_list)
 				hp_points_per_second = 1 / secs_per_tick
 			if(hp_points_per_second > 0)
 				var/pc_of_max_per_second = round(((hp_points_per_second / maxHealth) * 100), 0.1)
-				stat(null, "Regeneration: [ltext]: <font color='[lcolor]'>[num2text(pc_of_max_per_second)]% of health per second</font>")
+				status_tab_data[++status_tab_data.len] = list("Regeneration:", "[ltext]: <font color='[lcolor]'>[num2text(pc_of_max_per_second)]% of health per second</font>")
 
 /mob/living/simple_animal/hostile/poison/terror_spider/proc/DoRemoteView()
 	if(!isturf(loc))
@@ -451,7 +461,7 @@ GLOBAL_LIST_EMPTY(ts_spiderling_list)
 		if(T.stat == DEAD)
 			continue
 		targets |= T // we use |= instead of += to avoid adding src to the list twice
-	var/mob/living/L = input("Choose a terror to watch.", "Selection") in targets
+	var/mob/living/L = tgui_input_list(src, "Choose a terror to watch.", "Brood Viewing", targets)
 	if(istype(L))
 		reset_perspective(L)
 
@@ -463,5 +473,9 @@ GLOBAL_LIST_EMPTY(ts_spiderling_list)
 
 /mob/living/simple_animal/hostile/poison/terror_spider/movement_delay()
 	. = ..()
-	if(pulling && !ismob(pulling))
-		. += 6 // drastic move speed penalty for dragging anything that is not a mob
+	if(pulling && !ismob(pulling) && pulling.density)
+		. += 6 // Drastic move speed penalty for dragging anything that is not a mob or a non dense object
+
+/mob/living/simple_animal/hostile/poison/terror_spider/Login()
+	. = ..()
+	SEND_SIGNAL(src, COMSIG_MOB_LOGIN)

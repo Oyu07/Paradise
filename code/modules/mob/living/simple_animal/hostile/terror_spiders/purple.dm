@@ -12,6 +12,10 @@
 	name = "Purple Terror spider"
 	desc = "An ominous-looking purple spider. It looks about warily, as if waiting for something."
 	spider_role_summary = "Guards the nest of the Queen of Terror."
+	spider_intro_text = "As a Purple Terror Spider, your role is to guard all princess or queen terror spiders. \
+	You move faster than other spiders, have high health, deal decent damage, can force open powered doors and can destroy walls. \
+	Additionally, your webs are thick and will block vision for most of the crew. \
+	However, being away from queen or princess spiders for too long will cause you to degenerate, taking gradual damage until you die or gain sight of them again."
 	ai_target_method = TS_DAMAGE_BRUTE
 	icon_state = "terror_purple"
 	icon_living = "terror_purple"
@@ -24,7 +28,7 @@
 	move_to_delay = 5 // at 20ticks/sec, this is 4 tile/sec movespeed, same as a human. Faster than a normal spider, so it can intercept attacks on queen.
 	speed = 0 // '0' (also the default for human mobs) converts to 2.5 total delay, or 4 tiles/sec.
 	spider_opens_doors = 2
-	ventcrawler = 0
+	ventcrawler = VENTCRAWLER_NONE
 	ai_ventcrawls = FALSE
 	environment_smash = ENVIRONMENT_SMASH_RWALLS
 	idle_ventcrawl_chance = 0 // stick to the queen!
@@ -89,21 +93,22 @@
 					melee_damage_lower = 5
 					melee_damage_upper = 10
 
-/mob/living/simple_animal/hostile/poison/terror_spider/purple/Stat()
-	..()
+/mob/living/simple_animal/hostile/poison/terror_spider/purple/get_status_tab_items()
+	var/list/status_tab_data = ..()
+	. = status_tab_data
 	// Provides a status panel indicator, showing purples how long they can be away from their queen before their hivemind link breaks, and they die.
 	// Uses <font color='#X'> because the status panel does NOT accept <span class='X'>.
-	if(statpanel("Status") && ckey && stat == CONSCIOUS)
+	if(ckey && stat == CONSCIOUS)
 		if(spider_myqueen)
 			var/area/A = get_area(spider_myqueen)
 			if(degenerate)
-				stat(null, "Link: <font color='#eb4034'>BROKEN</font>") // color=red
+				status_tab_data[++status_tab_data.len] = list("Link:", "<font color='#eb4034'>BROKEN</font>") // color=red
 			else if(queen_visible)
-				stat(null, "Link: <font color='#32a852'>[spider_myqueen] is near</font>") // color=green
+				status_tab_data[++status_tab_data.len] = list("Link:", "<font color='#32a852'>[spider_myqueen] is near</font>") // color=green
 			else if(cycles_noqueen >= 12)
-				stat(null, "Link: <font color='#eb4034'>Critical - return to [spider_myqueen] in [A]</font>") // color=red
+				status_tab_data[++status_tab_data.len] = list("Link:", "<font color='#eb4034'>Critical - return to [spider_myqueen] in [A]</font>") // color=red
 			else
-				stat(null, "Link: <font color='#fcba03'>Warning - return to [spider_myqueen] in [A]</font>") // color=orange
+				status_tab_data[++status_tab_data.len] = list("Link:", "<font color='#fcba03'>Warning - return to [spider_myqueen] in [A]</font>") // color=orange
 
 
 

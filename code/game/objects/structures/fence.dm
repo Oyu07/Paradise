@@ -61,7 +61,7 @@
 /obj/structure/fence/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover) && mover.checkpass(PASSFENCE))
 		return TRUE
-	if(istype(mover, /obj/item/projectile))
+	if(isprojectile(mover))
 		return TRUE
 	if(!density)
 		return TRUE
@@ -148,7 +148,7 @@
 		return
 	shock(user, 70)
 	shock_cooldown = TRUE // We do not want bump shock spam!
-	addtimer(CALLBACK(src, .proc/shock_cooldown), 1 SECONDS, TIMER_UNIQUE | TIMER_OVERRIDE)
+	addtimer(CALLBACK(src, PROC_REF(shock_cooldown)), 1 SECONDS, TIMER_UNIQUE | TIMER_OVERRIDE)
 
 /obj/structure/fence/proc/shock_cooldown()
 	shock_cooldown = FALSE

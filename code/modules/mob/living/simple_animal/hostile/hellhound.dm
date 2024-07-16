@@ -118,21 +118,21 @@
 /mob/living/simple_animal/hostile/hellhound/greater/Initialize(mapload)
 	. = ..()
 	// Movement
-	AddSpell(new /obj/effect/proc_holder/spell/ethereal_jaunt/shift)
-	var/obj/effect/proc_holder/spell/area_teleport/teleport/telespell = new
+	AddSpell(new /datum/spell/ethereal_jaunt/shift)
+	var/datum/spell/area_teleport/teleport/telespell = new
 	telespell.clothes_req = FALSE
 	telespell.invocation_type = "none"
 	AddSpell(telespell)
-	var/obj/effect/proc_holder/spell/aoe_turf/knock/knockspell = new
+	var/datum/spell/aoe/knock/knockspell = new
 	knockspell.invocation_type = "none"
 	AddSpell(knockspell)
 	// Defense
-	var/obj/effect/proc_holder/spell/forcewall/greater/wallspell = new
+	var/datum/spell/forcewall/wallspell = new
 	wallspell.clothes_req = FALSE
 	wallspell.invocation_type = "none"
 	AddSpell(wallspell)
 	// Offense
-	var/obj/effect/proc_holder/spell/aoe_turf/conjure/creature/summonspell = new
+	var/datum/spell/aoe/conjure/creature/summonspell = new
 	summonspell.base_cooldown = 1
 	summonspell.invocation_type = "none"
 	summonspell.summon_type = list(/mob/living/simple_animal/hostile/hellhound)
@@ -149,7 +149,7 @@
 		return
 	smoke_lastuse = world.time
 	var/datum/effect_system/smoke_spread/sleeping/smoke = new
-	smoke.set_up(10, 0, loc)
+	smoke.set_up(10, FALSE, loc)
 	smoke.start()
 
 /mob/living/simple_animal/hostile/hellhound/tear

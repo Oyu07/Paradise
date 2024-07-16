@@ -8,13 +8,9 @@ GLOBAL_LIST_EMPTY(ai_displays)
 	anchored = TRUE
 	density = FALSE
 
-	var/spookymode = FALSE
-
 	/// Current mode
 	var/mode = AI_DISPLAY_MODE_BLANK
 
-	/// Target icon state
-	var/picture_state
 	/// Current emotion, used to calculate an icon state
 	var/emotion = "Neutral"
 
@@ -39,7 +35,8 @@ GLOBAL_LIST_EMPTY(ai_displays)
 	..(severity)
 
 /obj/machinery/ai_status_display/power_change()
-	..()
+	if(!..())
+		return
 	if(stat & NOPOWER)
 		set_light(0)
 	else
@@ -49,9 +46,16 @@ GLOBAL_LIST_EMPTY(ai_displays)
 	if(stat & (NOPOWER | BROKEN))
 		return FALSE
 
-	spookymode = TRUE
-	update_icon()
+	addtimer(CALLBACK(src, PROC_REF(un_spookify), mode), 2 SECONDS)
+	mode = null
+	update_icon(UPDATE_OVERLAYS)
 	return TRUE
+
+/obj/machinery/ai_status_display/proc/un_spookify(our_real_state)
+	mode = our_real_state
+	if(stat & (NOPOWER | BROKEN))
+		return FALSE
+	update_icon(UPDATE_OVERLAYS)
 
 /obj/machinery/ai_status_display/update_overlays()
 	. = ..()
@@ -110,3 +114,16 @@ GLOBAL_LIST_EMPTY(ai_displays)
 
 	. += new_display
 	underlays += emissive_appearance(icon, "lightmask")
+
+/obj/machinery/ai_status_display/wrench_act(mob/living/user, obj/item/I)
+	. = TRUE
+	if(!I.use_tool(src, user, 0 SECONDS))
+		return
+	TOOL_ATTEMPT_DISMANTLE_MESSAGE
+	if(I.use_tool(src, user, 2 SECONDS, volume = I.tool_volume))
+		TOOL_DISMANTLE_SUCCESS_MESSAGE
+		deconstruct()
+
+/obj/machinery/ai_status_display/on_deconstruction()
+	. = ..()
+	new /obj/item/mounted/frame/display/ai_display_frame(drop_location())

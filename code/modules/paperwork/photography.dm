@@ -40,35 +40,43 @@
 	user.examinate(src)
 
 /obj/item/photo/attackby(obj/item/P as obj, mob/user as mob, params)
-	if(istype(P, /obj/item/pen) || istype(P, /obj/item/toy/crayon))
-		var/txt = sanitize(input(user, "What would you like to write on the back?", "Photo Writing", null)  as text)
+	if(is_pen(P) || istype(P, /obj/item/toy/crayon))
+		var/txt = tgui_input_text(user, "What would you like to write on the back?", "Photo Writing")
+		if(!txt)
+			return
 		txt = copytext(txt, 1, 128)
-		if(loc == user && user.stat == 0)
+		if(loc == user && user.stat == CONSCIOUS)
 			scribble = txt
-	else if(istype(P, /obj/item/lighter))
+	else if(P.get_heat())
 		burnphoto(P, user)
 	..()
 
-/obj/item/photo/proc/burnphoto(obj/item/lighter/P, mob/user)
-	var/class = "<span class='warning'>"
+/obj/item/photo/proc/burnphoto(obj/item/P, mob/user)
+	if(user.restrained())
+		return
 
-	if(P.lit && !user.restrained())
-		if(istype(P, /obj/item/lighter/zippo))
-			class = "<span class='rose'>"
+	var/class = "warning"
+	if(istype(P, /obj/item/lighter/zippo))
+		class = "rose"
 
-		user.visible_message("[class][user] holds \the [P] up to \the [src], it looks like [user.p_theyre()] trying to burn it!</span>", \
-		"[class]You hold [P] up to [src], burning it slowly.</span>")
+	user.visible_message("<span class='[class]'>[user] holds [P] up to [src], it looks like [user.p_theyre()] trying to burn it!</span>", \
+	"<span class='[class]'>You hold [P] up to [src], burning it slowly.</span>")
 
-		if(do_after(user, 50, target = src))
-			if(user.get_active_hand() == P && P.lit)
-				user.visible_message("[class][user] burns right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap.</span>", \
-				"[class]You burn right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap.</span>")
-				if(user.is_in_inactive_hand(src))
-					user.unEquip(src)
-				new /obj/effect/decal/cleanable/ash(get_turf(src))
-				qdel(src)
-			else
-				to_chat(user, "<span class='warning'>You must hold \the [P] steady to burn \the [src].</span>")
+	if(!do_after(user, 5 SECONDS, target = src))
+		return
+
+	if(user.get_active_hand() != P || !P.get_heat())
+		to_chat(user, "<span class='warning'>You must hold [P] steady to burn [src].</span>")
+		return
+
+	user.visible_message("<span class='[class]'>[user] burns right through [src], turning it to ash. It flutters through the air before settling on the floor in a heap.</span>", \
+	"<span class='[class]'>You burn right through [src], turning it to ash. It flutters through the air before settling on the floor in a heap.</span>")
+
+	if(user.is_in_inactive_hand(src))
+		user.unEquip(src)
+
+	new /obj/effect/decal/cleanable/ash(get_turf(src))
+	qdel(src)
 
 /obj/item/photo/examine(mob/user)
 	. = ..()
@@ -76,6 +84,16 @@
 		show(user)
 	else
 		. += "<span class='notice'>It is too far away.</span>"
+	. += "<span class='info'><b>Alt-Click</b> [src] with a pen in hand to rename it.</span>"
+
+/obj/item/photo/AltClick(mob/user)
+	if(user.stat || HAS_TRAIT(user, TRAIT_HANDS_BLOCKED) || !Adjacent(user))
+		return
+
+	if(is_pen(user.get_active_hand()))
+		rename(user)
+	else
+		return ..()
 
 /obj/item/photo/proc/show(mob/user as mob)
 	var/icon/img_shown = new/icon(img)
@@ -88,26 +106,21 @@
 			colormatrix[7], colormatrix[8], colormatrix[9],
 		)
 	usr << browse_rsc(img_shown, "tmp_photo.png")
-	usr << browse("<html><head><title>[name]</title></head>" \
+	usr << browse("<html><meta charset='utf-8'><head><title>[name]</title></head>" \
 		+ "<body style='overflow:hidden;margin:0;text-align:center'>" \
 		+ "<img src='tmp_photo.png' width='[64*photo_size]' style='-ms-interpolation-mode:nearest-neighbor' />" \
 		+ "[scribble ? "<br>Written on the back:<br><i>[scribble]</i>" : ""]"\
 		+ "</body></html>", "window=Photo[UID()];size=[64*photo_size]x[scribble ? 400 : 64*photo_size]")
 	onclose(usr, "Photo[UID()]")
-	return
 
-/obj/item/photo/verb/rename()
-	set name = "Rename photo"
-	set category = "Object"
-	set src in usr
-
-	var/n_name = sanitize(copytext(input(usr, "What would you like to label the photo?", "Photo Labelling", name) as text, 1, MAX_MESSAGE_LEN))
+/obj/item/photo/proc/rename(mob/user)
+	var/n_name = tgui_input_text(user, "What would you like to label the photo?", "Photo Labelling", name)
+	if(!n_name)
+		return
 	//loc.loc check is for making possible renaming photos in clipboards
-	if(( (loc == usr || (loc.loc && loc.loc == usr)) && usr.stat == 0))
-		name = "[(n_name ? text("[n_name]") : "photo")]"
-	add_fingerprint(usr)
-	return
-
+	if(((loc == user || (loc.loc && loc.loc == user)) && !user.stat))
+		name = "[(n_name ? "[n_name]" : "photo")]"
+	add_fingerprint(user)
 
 /**************
 * photo album *
@@ -127,12 +140,12 @@
 
 /obj/item/storage/photo_album/MouseDrop(obj/over_object as obj)
 
-	if((istype(usr, /mob/living/carbon/human)))
+	if(ishuman(usr))
 		var/mob/M = usr
-		if(!( istype(over_object, /obj/screen) ))
+		if(!is_screen_atom(over_object))
 			return ..()
-		playsound(loc, "rustle", 50, 1, -5)
-		if((!( M.restrained() ) && !( M.stat ) && M.back == src))
+		playsound(loc, "rustle", 50, TRUE, -5)
+		if((!M.restrained() && !M.stat && M.back == src))
 			switch(over_object.name)
 				if("r_hand")
 					M.unEquip(src)
@@ -159,10 +172,13 @@
 	icon_state = "camera"
 	item_state = "electropack"
 	w_class = WEIGHT_CLASS_SMALL
-	slot_flags = SLOT_BELT
+	slot_flags = SLOT_FLAG_BELT
 	var/list/matter = list("metal" = 2000)
 	var/pictures_max = 10
-	var/pictures_left = 10
+	// cameras historically were varedited to start with 30 shots despite
+	// cartridges only being 10 extra shots, hency why pictures_left >
+	// pictures_max, at least to start
+	var/pictures_left = 30
 	var/on = TRUE
 	var/on_cooldown = FALSE
 	var/blueprints = 0
@@ -173,10 +189,17 @@
 	var/current_photo_num = 1
 	var/digital = FALSE
 
+/obj/item/camera/autopsy
+	name = "autopsy camera"
+
+/obj/item/camera/detective
+	name = "detective's camera"
+
 /obj/item/camera/examine(mob/user)
 	. = ..()
 	if(!digital)
 		. += "<span class='notice'>There is [pictures_left] photos left.</span>"
+	. += "<span class='info'><b>Alt-Click</b> [src] to change the photo size.</span>"
 
 /obj/item/camera/spooky/CheckParts(list/parts_list)
 	..()
@@ -196,18 +219,16 @@ GLOBAL_LIST_INIT(SpookyGhosts, list("ghost","shade","shade2","ghost-narsie","hor
 	see_ghosts = TRUE
 
 /obj/item/camera/AltClick(mob/user)
-	if(in_range(user, src) && !user.incapacitated())
-		change_size()
+	if(user.stat || HAS_TRAIT(user, TRAIT_HANDS_BLOCKED) || !Adjacent(user))
 		return
-	. = ..()
 
-/obj/item/camera/verb/change_size()
-	set name = "Set Photo Focus"
-	set category = "Object"
-	var/nsize = input("Photo Size","Pick a size of resulting photo.") as null|anything in list(1,3,5,7)
+	change_size(user)
+
+/obj/item/camera/proc/change_size(mob/user)
+	var/nsize = tgui_input_list(user, "Photo Size", "Pick a size of resulting photo.", list(1,3,5,7))
 	if(nsize)
 		size = nsize
-		to_chat(usr, "<span class='notice'>Camera will now take [size]x[size] photos.</span>")
+		to_chat(user, "<span class='notice'>Camera will now take [size]x[size] photos.</span>")
 
 /obj/item/camera/attack(mob/living/carbon/human/M as mob, mob/user as mob)
 	return
@@ -252,7 +273,7 @@ GLOBAL_LIST_INIT(SpookyGhosts, list("ghost","shade","shade2","ghost-narsie","hor
 		// As well as anything that isn't invisible.
 		for(var/atom/A in the_turf)
 			if(A.invisibility)
-				if(see_ghosts && istype(A,/mob/dead/observer))
+				if(see_ghosts && isobserver(A))
 					var/mob/dead/observer/O = A
 					if(O.orbiting_uid)
 						continue
@@ -264,7 +285,7 @@ GLOBAL_LIST_INIT(SpookyGhosts, list("ghost","shade","shade2","ghost-narsie","hor
 					continue
 			else//not invisable, not a spookyghost add it.
 				var/disguised = null
-				if(user.viewing_alternate_appearances && user.viewing_alternate_appearances.len && ishuman(A) && A.alternate_appearances && A.alternate_appearances.len) //This whole thing and the stuff below just checks if the atom is a Solid Snake cosplayer.
+				if(user.viewing_alternate_appearances && length(user.viewing_alternate_appearances) && ishuman(A) && A.alternate_appearances && length(A.alternate_appearances)) //This whole thing and the stuff below just checks if the atom is a Solid Snake cosplayer.
 					for(var/datum/alternate_appearance/alt_appearance in user.viewing_alternate_appearances)
 						if(alt_appearance.owner == A) //If it turns out they are, don't blow their cover. That'd be rude.
 							atoms.Add(image(alt_appearance.img, A.loc, layer = 4, dir = A.dir)) //Render their disguise.
@@ -278,7 +299,7 @@ GLOBAL_LIST_INIT(SpookyGhosts, list("ghost","shade","shade2","ghost-narsie","hor
 	// Sort the atoms into their layers
 	var/list/sorted = sort_atoms_by_layer(atoms)
 	var/center_offset = (size-1)/2 * 32 + 1
-	for(var/i; i <= sorted.len; i++)
+	for(var/i; i <= length(sorted); i++)
 		var/atom/A = sorted[i]
 		if(A)
 			var/icon/img = getFlatIcon(A)//build_composite_icon(A)
@@ -288,7 +309,7 @@ GLOBAL_LIST_INIT(SpookyGhosts, list("ghost","shade","shade2","ghost-narsie","hor
 			// If what we got back is actually a picture, draw it.
 			if(istype(img, /icon))
 				// Check if we're looking at a mob that's lying down
-				if(istype(A, /mob/living))
+				if(isliving(A))
 					var/mob/living/L = A
 					if(IS_HORIZONTAL(L))
 						// If they are, apply that effect to their picture.
@@ -314,7 +335,7 @@ GLOBAL_LIST_INIT(SpookyGhosts, list("ghost","shade","shade2","ghost-narsie","hor
 	var/mob_detail
 	for(var/mob/M in the_turf)
 		if(M.invisibility)
-			if(see_ghosts && istype(M,/mob/dead/observer))
+			if(see_ghosts && isobserver(M))
 				var/mob/dead/observer/O = M
 				if(O.orbiting_uid)
 					continue
@@ -327,7 +348,7 @@ GLOBAL_LIST_INIT(SpookyGhosts, list("ghost","shade","shade2","ghost-narsie","hor
 
 		var/holding = null
 
-		if(istype(M, /mob/living/carbon))
+		if(iscarbon(M))
 			var/mob/living/carbon/A = M
 			if(A.l_hand || A.r_hand)
 				if(A.l_hand) holding = "They are holding \a [A.l_hand]"
@@ -348,9 +369,9 @@ GLOBAL_LIST_INIT(SpookyGhosts, list("ghost","shade","shade2","ghost-narsie","hor
 		return
 	captureimage(target, user, flag)
 
-	playsound(loc, pick('sound/items/polaroid1.ogg', 'sound/items/polaroid2.ogg'), 75, 1, -3)
+	playsound(loc, pick('sound/items/polaroid1.ogg', 'sound/items/polaroid2.ogg'), 75, TRUE, -3)
 	set_light(3, 2, LIGHT_COLOR_TUNGSTEN)
-	addtimer(CALLBACK(src, /atom./proc/set_light, 0), 2)
+	addtimer(CALLBACK(src, TYPE_PROC_REF(/atom, set_light), 0), 2)
 	pictures_left--
 	to_chat(user, "<span class='notice'>[pictures_left] photos left.</span>")
 	icon_state = icon_off
@@ -360,7 +381,7 @@ GLOBAL_LIST_INIT(SpookyGhosts, list("ghost","shade","shade2","ghost-narsie","hor
 		if(user.mind && user.mind.assigned_role == "Chaplain" && see_ghosts)
 			if(prob(24))
 				handle_haunt(user)
-	addtimer(CALLBACK(src, .proc/reset_cooldown), 6.4 SECONDS) // fucking magic numbers
+	addtimer(CALLBACK(src, PROC_REF(reset_cooldown)), 6.4 SECONDS) // fucking magic numbers
 
 /obj/item/camera/proc/reset_cooldown()
 	icon_state = icon_on
@@ -407,7 +428,7 @@ GLOBAL_LIST_INIT(SpookyGhosts, list("ghost","shade","shade2","ghost-narsie","hor
 
 	var/datum/picture/P = new()
 	if(istype(src,/obj/item/camera/digital))
-		P.fields["name"] = input(user,"Name photo:","photo")
+		P.fields["name"] = tgui_input_text(user, "Name photo:", "Photo", encode = FALSE)
 		if(!P.fields["name"])
 			P.fields["name"] = "Photo [current_photo_num]"
 			current_photo_num++
@@ -479,15 +500,15 @@ GLOBAL_LIST_INIT(SpookyGhosts, list("ghost","shade","shade2","ghost-narsie","hor
 		return
 
 	captureimage(target, user, flag)
-	playsound(loc, pick('sound/items/polaroid1.ogg', 'sound/items/polaroid2.ogg'), 75, 1, -3)
+	playsound(loc, pick('sound/items/polaroid1.ogg', 'sound/items/polaroid2.ogg'), 75, TRUE, -3)
 
 	icon_state = icon_off
 	on = FALSE
 	on_cooldown = TRUE
-	addtimer(CALLBACK(src, .proc/reset_cooldown), 6.4 SECONDS) // magic numbers here too
+	addtimer(CALLBACK(src, PROC_REF(reset_cooldown)), 6.4 SECONDS) // magic numbers here too
 
 /obj/item/camera/digital/captureimage(atom/target, mob/user, flag)
-	if(saved_pictures.len >= max_storage)
+	if(length(saved_pictures) >= max_storage)
 		to_chat(user, "<span class='notice'>Maximum photo storage capacity reached.</span>")
 		return
 	to_chat(user, "Picture saved.")
@@ -509,80 +530,96 @@ GLOBAL_LIST_INIT(SpookyGhosts, list("ghost","shade","shade2","ghost-narsie","hor
 	var/datum/picture/P = createpicture(target, user, turfs, mobs, flag)
 	saved_pictures += P
 
-/obj/item/camera/digital/verb/print_picture()
-	set name = "Print picture"
-	set category = "Object"
-	set src in usr
+/obj/item/camera/digital/examine(mob/user)
+	. = ..()
+	. += "<span class='info'><b>Alt-Shift-Click</b> [src] to print a specific photo.</span>"
+	. += "<span class='info'><b>Ctrl-Shift-Click</b> [src] to delete a specific photo.</span>"
 
-	if(saved_pictures.len == 0)
-		to_chat(usr, "<span class='userdanger'>No images saved.</span>")
+/obj/item/camera/digital/AltShiftClick(mob/user)
+	if(user.stat || HAS_TRAIT(user, TRAIT_HANDS_BLOCKED) || !Adjacent(user))
 		return
-	if(pictures_left == 0)
-		to_chat(usr, "<span class='userdanger'>There is no film left to print.</span>")
+	if(!length(saved_pictures))
+		to_chat(user, "<span class='userdanger'>No images saved.</span>")
+		return
+	if(!pictures_left)
+		to_chat(user, "<span class='userdanger'>There is no film left to print.</span>")
 		return
 
-	var/datum/picture/P = null
-	P = input("Select image to print:",P) as null|anything in saved_pictures
-	if(P)
-		printpicture(usr,P)
+	var/datum/picture/picture
+	picture = tgui_input_list(user, "Select image to print", "Print image", saved_pictures)
+	if(picture)
+		printpicture(user, picture)
 		pictures_left --
 
-/obj/item/camera/digital/verb/delete_picture()
-	set name = "Delete picture"
-	set category = "Object"
-	set src in usr
-
-	if(saved_pictures.len == 0)
-		to_chat(usr, "<span class='userdanger'>No images saved</span>")
+/obj/item/camera/digital/CtrlShiftClick(mob/user)
+	if(user.stat || HAS_TRAIT(user, TRAIT_HANDS_BLOCKED) || !Adjacent(user))
 		return
-	var/datum/picture/P = null
-	P = input("Select image to delete:",P) as null|anything in saved_pictures
-	if(P)
-		saved_pictures -= P
+
+	if(!length(saved_pictures))
+		to_chat(user, "<span class='userdanger'>No images saved</span>")
+		return
+	var/datum/picture/picture
+	picture = tgui_input_list(user, "Select image to delete", "Delete image", saved_pictures)
+	if(picture)
+		saved_pictures -= picture
 
 /**************
 *video camera *
 ***************/
+#define CAMERA_STATE_COOLDOWN 2 SECONDS
 
 /obj/item/videocam
 	name = "video camera"
 	icon = 'icons/obj/items.dmi'
-	desc = "video camera that can send live feed to the entertainment network."
+	desc = "This video camera can send live feeds to the entertainment network. You must hold to use it."
 	icon_state = "videocam"
 	item_state = "videocam"
-	w_class = WEIGHT_CLASS_SMALL
-	slot_flags = SLOT_BELT
-	materials = list(MAT_METAL=2000)
+	w_class = WEIGHT_CLASS_NORMAL
+	materials = list(MAT_METAL = 1000, MAT_GLASS = 500)
 	var/on = FALSE
+	var/video_cooldown = 0
 	var/obj/machinery/camera/camera
 	var/icon_on = "videocam_on"
 	var/icon_off = "videocam"
 	var/canhear_range = 7
 
-/obj/item/videocam/attack_self(mob/user)
-	on = !on
-	if(camera)
-		if(!on)
-			src.icon_state = icon_off
-			camera.c_tag = null
-			camera.network = list()
-		else
-			src.icon_state = icon_on
-			camera.network = list("news")
-			camera.c_tag = user.name
-	else
-
-		src.icon_state = icon_on
+/obj/item/videocam/proc/camera_state(mob/living/carbon/user)
+	if(!on)
+		on = TRUE
 		camera = new /obj/machinery/camera(src)
+		icon_state = icon_on
 		camera.network = list("news")
-		GLOB.cameranet.removeCamera(camera)
 		camera.c_tag = user.name
-	to_chat(user, "You switch the camera [on ? "on" : "off"].")
+	else
+		on = FALSE
+		icon_state = icon_off
+		camera.c_tag = null
+		QDEL_NULL(camera)
+	visible_message("<span class='notice'>The video camera has been turned [on ? "on" : "off"].</span>")
+	for(var/obj/machinery/computer/security/telescreen/entertainment/TV in GLOB.machines)
+		if(on)
+			TV.feeds_on++
+		else
+			TV.feeds_on--
+		TV.update_icon(UPDATE_OVERLAYS)
+	video_cooldown = world.time + CAMERA_STATE_COOLDOWN
+
+/obj/item/videocam/attack_self(mob/user)
+	if(world.time < video_cooldown)
+		to_chat(user, "<span class='warning'>[src] is overheating, give it some time.</span>")
+		return
+	camera_state(user)
+
+/obj/item/videocam/dropped()
+	. = ..()
+	if(!on)
+		return
+	camera_state()
 
 /obj/item/videocam/examine(mob/user)
 	. = ..()
 	if(in_range(user, src))
-		. += "This video camera can send live feeds to the entertainment network. It's [camera ? "" : "in"]active."
+		. += "It's [on ? "" : "in"]active."
 
 /obj/item/videocam/hear_talk(mob/M as mob, list/message_pieces)
 	var/msg = multilingual_to_message(message_pieces)
@@ -599,6 +636,12 @@ GLOBAL_LIST_INIT(SpookyGhosts, list("ghost","shade","shade2","ghost-narsie","hor
 			if(T.watchers[M] == camera)
 				T.atom_say(msg)
 
+/obj/item/videocam/advanced
+	name = "advanced video camera"
+	desc = "This video camera allows you to send live feeds even when attached to a belt."
+	slot_flags = SLOT_FLAG_BELT
+
+#undef CAMERA_STATE_COOLDOWN
 
 ///hauntings, like hallucinations but more spooky
 
@@ -609,3 +652,30 @@ GLOBAL_LIST_INIT(SpookyGhosts, list("ghost","shade","shade2","ghost-narsie","hor
 						'sound/hallucinations/look_up1.ogg', 'sound/hallucinations/look_up2.ogg', 'sound/hallucinations/over_here1.ogg', 'sound/hallucinations/over_here2.ogg', 'sound/hallucinations/over_here3.ogg',\
 						'sound/hallucinations/turn_around1.ogg', 'sound/hallucinations/turn_around2.ogg', 'sound/hallucinations/veryfar_noise.ogg', 'sound/hallucinations/wail.ogg')
 			user << pick(creepyasssounds)
+
+
+/obj/item/camera/proc/build_composite_icon(atom/A)
+	var/icon/composite = icon(A.icon, A.icon_state, A.dir, 1)
+	for(var/O in A.overlays)
+		var/image/I = O
+		composite.Blend(icon(I.icon, I.icon_state, I.dir, 1), ICON_OVERLAY)
+	return composite
+
+/obj/item/camera/proc/sort_atoms_by_layer(list/atoms)
+	// Comb sort icons based on levels
+	var/list/result = atoms.Copy()
+	var/gap = length(result)
+	var/swapped = 1
+	while(gap > 1 || swapped)
+		swapped = 0
+		if(gap > 1)
+			gap = round(gap / 1.3) // 1.3 is the emperic comb sort coefficient
+		if(gap < 1)
+			gap = 1
+		for(var/i = 1; gap + i <= length(result); i++)
+			var/atom/l = result[i]		//Fucking hate
+			var/atom/r = result[gap+i]	//how lists work here
+			if(l.layer > r.layer)		//no "result[i].layer" for me
+				result.Swap(i, gap + i)
+				swapped = 1
+	return result

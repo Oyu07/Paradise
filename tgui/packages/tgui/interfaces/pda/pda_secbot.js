@@ -14,27 +14,11 @@ const BotList = (props, context) => {
   const { beepsky } = data;
   const { bots } = beepsky;
 
-  return (
-    <Box>
-      {bots.map((b) => (
-        <Box key={b.Name}>
-          <Button
-            content={b.Name}
-            icon="cog"
-            onClick={() => act('AccessBot', { uid: b.uid })}
-          />
-        </Box>
-      ))}
-      <Box mt={2}>
-        <Button
-          fluid
-          icon="rss"
-          content="Re-scan for bots"
-          onClick={() => act('Rescan')}
-        />
-      </Box>
+  return bots.map((b) => (
+    <Box key={b.Name}>
+      <Button content={b.Name} icon="cog" onClick={() => act('control', { bot: b.uid })} />
     </Box>
-  );
+  ));
 };
 
 const BotStatus = (props, context) => {
@@ -79,13 +63,9 @@ const BotStatus = (props, context) => {
         <LabeledList.Item label="Location">{loca}</LabeledList.Item>
         <LabeledList.Item label="Status">{statusText}</LabeledList.Item>
         <LabeledList.Item label="Controls">
-          <Button content="Go" icon="play" onClick={() => act('Go')} />
-          <Button content="Stop" icon="stop" onClick={() => act('Stop')} />
-          <Button
-            content="Summon"
-            icon="arrow-down"
-            onClick={() => act('Summon')}
-          />
+          <Button content="Go" icon="play" onClick={() => act('go')} />
+          <Button content="Stop" icon="stop" onClick={() => act('stop')} />
+          <Button content="Summon" icon="arrow-down" onClick={() => act('summon')} />
         </LabeledList.Item>
       </LabeledList>
     </Section>

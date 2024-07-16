@@ -5,15 +5,14 @@
 	spread_flags = CONTACT_GENERAL
 	cure_text = "Diphenhydramine & Sulfur"
 	cures = list("diphenhydramine","sulfur")
-	cure_chance = 15//higher chance to cure, since two reagents are required
+	cure_chance = 15 // Higher chance to cure, since two reagents are required
 	agent = "Gravitokinetic Bipotential SADS+"
 	viable_mobtypes = list(/mob/living/carbon/human)
-	disease_flags = CAN_CARRY|CAN_RESIST|CURABLE
-	permeability_mod = 1
 	severity = BIOHAZARD
 
 /datum/disease/gbs/stage_act()
-	..()
+	if(!..())
+		return FALSE
 	switch(stage)
 		if(2)
 			if(prob(45))
@@ -41,11 +40,10 @@
 /datum/disease/gbs/curable
 	name = "Non-Contagious GBS"
 	stage_prob = 5
-	spread_text = "Non-Contagious"
-	spread_flags = SPECIAL
+	spread_text = "Non-contagious"
+	spread_flags = NON_CONTAGIOUS
 	cure_text = "Cryoxadone"
 	cures = list("cryoxadone")
 	cure_chance = 10
 	agent = "gibbis"
-	spread_flags = NON_CONTAGIOUS
 	disease_flags = CURABLE

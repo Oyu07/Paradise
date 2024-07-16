@@ -34,7 +34,7 @@
 
 /obj/item/grenade/chem_grenade/Destroy()
 	QDEL_NULL(nadeassembly)
-	QDEL_LIST(beakers)
+	QDEL_LIST_CONTENTS(beakers)
 	return ..()
 
 /obj/item/grenade/chem_grenade/examine(mob/user)
@@ -78,7 +78,7 @@
 				else
 					icon_state += "_locked"
 				name = payload_name + "grenade" + label
-	
+
 	underlays.Cut()
 	if(nadeassembly)
 		underlays += "[nadeassembly.a_left.icon_state]_left"
@@ -133,40 +133,8 @@
 				update_icon(UPDATE_ICON_STATE)
 				to_chat(user, "You remove the label from [src].")
 				return 1
-	if(istype(I, /obj/item/screwdriver))
-		if(stage == WIRED)
-			if(beakers.len)
-				to_chat(user, "<span class='notice'>You lock the assembly.</span>")
-				playsound(loc, prime_sound, 25, -3)
-				stage = READY
-				update_icon(UPDATE_ICON_STATE)
-				contained = ""
-				cores = "" // clear them out so no recursive logging by accidentally
-				for(var/obj/O in beakers)
-					if(!O.reagents) continue
-					if(istype(O,/obj/item/slime_extract))
-						cores += " [O]"
-					for(var/R in O.reagents.reagent_list)
-						var/datum/reagent/reagent = R
-						contained += "[reagent.volume] [reagent], "
-				if(contained)
-					if(cores)
-						contained = "\[[cores]; [contained]\]"
-					else
-						contained = "\[ [contained]\]"
-				var/turf/bombturf = get_turf(loc)
-				add_attack_logs(user, src, "has completed with [contained]", ATKLOG_MOST)
-				log_game("[key_name(usr)] has completed [name] at [bombturf.x], [bombturf.y], [bombturf.z]. [contained]")
-			else
-				to_chat(user, "<span class='notice'>You need to add at least one beaker before locking the assembly.</span>")
-		else if(stage == READY && !nadeassembly)
-			det_time = det_time == 50 ? 30 : 50	//toggle between 30 and 50
-			to_chat(user, "<span class='notice'>You modify the time delay. It's set for [det_time / 10] second\s.</span>")
-		else if(stage == EMPTY)
-			to_chat(user, "<span class='notice'>You need to add an activation mechanism.</span>")
-
 	else if(stage == WIRED && is_type_in_list(I, allowed_containers))
-		if(beakers.len == 2)
+		if(length(beakers) == 2)
 			to_chat(user, "<span class='notice'>[src] can not hold more containers.</span>")
 			return
 		else
@@ -216,23 +184,57 @@
 			nadeassembly.forceMove(get_turf(src))
 			nadeassembly.master = null
 			nadeassembly = null
-		if(beakers.len)
+		if(length(beakers))
 			for(var/obj/O in beakers)
 				O.forceMove(get_turf(src))
 			beakers = list()
 		update_icon(UPDATE_ICON_STATE)
 
+/obj/item/grenade/chem_grenade/screwdriver_act(mob/living/user, obj/item/I)
+	if(stage == WIRED)
+		if(!length(beakers))
+			to_chat(user, "<span class='notice'>You need to add at least one beaker before locking the assembly.</span>")
+			return TRUE
 
-//assembly stuff
-/obj/item/grenade/chem_grenade/receive_signal()
-	prime()
+		to_chat(user, "<span class='notice'>You lock the assembly.</span>")
+		playsound(loc, prime_sound, 25, -3)
+		stage = READY
+		update_icon(UPDATE_ICON_STATE)
+		contained = ""
+		cores = "" // clear them out so no recursive logging by accidentally
+		for(var/obj/O in beakers)
+			if(!O.reagents)
+				continue
+			if(istype(O, /obj/item/slime_extract))
+				cores += " [O]"
+			for(var/R in O.reagents.reagent_list)
+				var/datum/reagent/reagent = R
+				contained += "[reagent.volume] [reagent], "
+		if(contained)
+			if(cores)
+				contained = "\[[cores]; [contained]\]"
+			else
+				contained = "\[ [contained]\]"
+		var/turf/bombturf = get_turf(loc)
+		add_attack_logs(user, src, "has completed with [contained]", ATKLOG_MOST)
+		log_game("[key_name(usr)] has completed [name] at [bombturf.x], [bombturf.y], [bombturf.z]. [contained]")
+		return TRUE
+
+	else if(stage == READY && !nadeassembly)
+		det_time = det_time == 50 ? 30 : 50	//toggle between 30 and 50
+		to_chat(user, "<span class='notice'>You modify the time delay. It's set for [det_time / 10] second\s.</span>")
+		return TRUE
+
+	else if(stage == EMPTY)
+		to_chat(user, "<span class='notice'>You need to add an activation mechanism.</span>")
+		return TRUE
 
 /obj/item/grenade/chem_grenade/HasProximity(atom/movable/AM)
 	if(nadeassembly)
 		nadeassembly.HasProximity(AM)
 
 /obj/item/grenade/chem_grenade/Move() // prox sensors and infrared care about this
-	..()
+	. = ..()
 	if(nadeassembly)
 		nadeassembly.process_movement()
 
@@ -278,7 +280,7 @@
 
 	if(!chem_splash(get_turf(src), affected_area, reactants, ignition_temp, threatscale) && !no_splash)
 		playsound(loc, 'sound/items/screwdriver2.ogg', 50, 1)
-		if(beakers.len)
+		if(length(beakers))
 			for(var/obj/O in beakers)
 				O.forceMove(get_turf(src))
 			beakers = list()
@@ -291,9 +293,10 @@
 		var/mob/last = get_mob_by_ckey(nadeassembly.fingerprintslast)
 		var/turf/T = get_turf(src)
 		var/area/A = get_area(T)
-		message_admins("grenade primed by an assembly, attached by [key_name_admin(M)] and last touched by [key_name_admin(last)] ([nadeassembly.a_left.name] and [nadeassembly.a_right.name]) at <A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=[T.x];Y=[T.y];Z=[T.z]'>[A.name] (JMP)</a>. [contained]")
+		message_admins("grenade primed by an assembly, attached by [key_name_admin(M)] and last touched by [key_name_admin(last)] ([nadeassembly.a_left.name] and [nadeassembly.a_right.name]) at <A href='byond://?_src_=holder;adminplayerobservecoodjump=1;X=[T.x];Y=[T.y];Z=[T.z]'>[A.name] (JMP)</a>. [contained]")
 		log_game("grenade primed by an assembly, attached by [key_name(M)] and last touched by [key_name(last)] ([nadeassembly.a_left.name] and [nadeassembly.a_right.name]) at [A.name] ([T.x], [T.y], [T.z]) [contained]")
-
+		investigate_log("grenade primed by an assembly, attached by [key_name_admin(M)] and last touched by [key_name_admin(last)] ([nadeassembly.a_left.name] and [nadeassembly.a_right.name]) at <a href='byond://?_src_=holder;adminplayerobservecoodjump=1;X=[T.x];Y=[T.y];Z=[T.z]'>[A.name] (JMP)</a>.", INVESTIGATE_BOMB)
+		add_attack_logs(last, src, "has armed for detonation", ATKLOG_FEW)
 	update_mob()
 
 	qdel(src)
@@ -321,8 +324,8 @@
 	desc = "A custom made large grenade. It affects a larger area."
 	icon_state = "large_grenade"
 	bomb_state = "largebomb"
-	allowed_containers = list(/obj/item/reagent_containers/glass,/obj/item/reagent_containers/food/condiment,
-								/obj/item/reagent_containers/food/drinks)
+	allowed_containers = list(/obj/item/reagent_containers/glass,/obj/item/reagent_containers/condiment,
+								/obj/item/reagent_containers/drinks)
 	origin_tech = "combat=3;engineering=3"
 	affected_area = 5
 	ignition_temp = 25 // Large grenades are slightly more effective at setting off heat-sensitive mixtures than smaller grenades.
@@ -363,14 +366,16 @@
 	else
 		return ..()
 
-/obj/item/grenade/chem_grenade/cryo // Intended for rare cryogenic mixes. Cools the area moderately upon detonation.
+/// Intended for rare cryogenic mixes. Cools the area moderately upon detonation.
+/obj/item/grenade/chem_grenade/cryo
 	name = "cryo grenade"
 	desc = "A custom made cryogenic grenade. It rapidly cools its contents upon detonation."
 	icon_state = "cryog"
 	affected_area = 2
 	ignition_temp = -100
 
-/obj/item/grenade/chem_grenade/pyro // Intended for pyrotechnical mixes. Produces a small fire upon detonation, igniting potentially flammable mixtures.
+/// Intended for pyrotechnical mixes. Produces a small fire upon detonation, igniting potentially flammable mixtures.
+/obj/item/grenade/chem_grenade/pyro
 	name = "pyro grenade"
 	desc = "A custom made pyrotechnical grenade. It heats up and ignites its contents upon detonation."
 	icon_state = "pyrog"
@@ -378,7 +383,8 @@
 	affected_area = 3
 	ignition_temp = 500 // This is enough to expose a hotspot.
 
-/obj/item/grenade/chem_grenade/adv_release // Intended for weaker, but longer lasting effects. Could have some interesting uses.
+/// Intended for weaker, but longer lasting effects. Could have some interesting uses.
+/obj/item/grenade/chem_grenade/adv_release
 	name = "advanced release grenade"
 	desc = "A custom made advanced release grenade. It is able to be detonated more than once. Can be configured using a multitool."
 	icon_state = "timeg"
@@ -421,10 +427,12 @@
 		var/mob/last = get_mob_by_ckey(nadeassembly.fingerprintslast)
 		var/turf/T = get_turf(src)
 		var/area/A = get_area(T)
-		message_admins("grenade primed by an assembly, attached by [key_name_admin(M)] and last touched by [key_name_admin(last)] ([nadeassembly.a_left.name] and [nadeassembly.a_right.name]) at <A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=[T.x];Y=[T.y];Z=[T.z]'>[A.name] (JMP)</a>.")
+		message_admins("grenade primed by an assembly, attached by [key_name_admin(M)] and last touched by [key_name_admin(last)] ([nadeassembly.a_left.name] and [nadeassembly.a_right.name]) at <A href='byond://?_src_=holder;adminplayerobservecoodjump=1;X=[T.x];Y=[T.y];Z=[T.z]'>[A.name] (JMP)</a>.")
 		log_game("grenade primed by an assembly, attached by [key_name(M)] and last touched by [key_name(last)] ([nadeassembly.a_left.name] and [nadeassembly.a_right.name]) at [A.name] ([T.x], [T.y], [T.z])")
+		investigate_log("grenade primed by an assembly, attached by [key_name_admin(M)] and last touched by [key_name_admin(last)] ([nadeassembly.a_left.name] and [nadeassembly.a_right.name]) at <a href='byond://?_src_=holder;adminplayerobservecoodjump=1;X=[T.x];Y=[T.y];Z=[T.z]'>[A.name] (JMP)</a>.", INVESTIGATE_BOMB)
+		add_attack_logs(last, src, "has armed for detonation", ATKLOG_FEW)
 	else
-		addtimer(CALLBACK(src, .proc/prime), det_time)
+		addtimer(CALLBACK(src, PROC_REF(prime)), det_time)
 	var/turf/DT = get_turf(src)
 	var/area/DA = get_area(DT)
 	log_game("A grenade detonated at [DA.name] ([DT.x], [DT.y], [DT.z])")
@@ -582,6 +590,24 @@
 
 	beakers += B1
 	beakers += B2
+	update_icon(UPDATE_ICON_STATE)
+
+/obj/item/grenade/chem_grenade/tar
+	payload_name = "sticky tar"
+	desc = "For spreading sticky tar. Become the anti-janitor!"
+	stage = READY
+
+/obj/item/grenade/chem_grenade/tar/Initialize(mapload)
+	. = ..()
+	var/obj/item/reagent_containers/glass/beaker/beaker_1 = new(src)
+	var/obj/item/reagent_containers/glass/beaker/beaker_2 = new(src)
+
+	beaker_1.reagents.add_reagent("sticky_tar", 15)
+	beaker_1.reagents.add_reagent("potassium", 10)
+	beaker_2.reagents.add_reagent("phosphorus", 10)
+	beaker_2.reagents.add_reagent("sugar", 10)
+	beakers += beaker_1
+	beakers += beaker_2
 	update_icon(UPDATE_ICON_STATE)
 
 #undef EMPTY

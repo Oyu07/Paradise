@@ -28,11 +28,11 @@
 /datum/news_announcement/revolution_inciting_event/human_experiments
 	round_time = 60*90
 	message = {"Unbelievable reports about human experimentation have reached our ears. According
-			 	to a refugee from one of the Tau Ceti Research Stations, their station, in order
-			 	to increase revenue, has refactored several of their facilities to perform experiments
-			 	on live humans, including virology research, genetic manipulation, and \"feeding them
-			 	to the slimes to see what happens\". Allegedly, these test subjects were neither
-			 	humanified monkeys nor volunteers, but rather unqualified staff that were forced into
+				to a refugee from one of the Tau Ceti Research Stations, their station, in order
+				to increase revenue, has refactored several of their facilities to perform experiments
+				on live humans, including virology research, genetic manipulation, and \"feeding them
+				to the slimes to see what happens\". Allegedly, these test subjects were neither
+				humanified monkeys nor volunteers, but rather unqualified staff that were forced into
 				the experiments, and reported to have died in a \"work accident\" by Nanotrasen Inc."}
 	author = "Unauthorized"
 
@@ -73,7 +73,7 @@
 	channel_name = "Nyx Daily"
 	author = "Reporter Leland H. Howards"
 
-	message = {"The newly-christened civillian transport Lotus Tree suffered two very large explosions near the
+	message = {"The newly-christened civilian transport Lotus Tree suffered two very large explosions near the
 				bridge today, and there are unconfirmed reports that the death toll has passed 50. The cause of
 				the explosions remain unknown, but there is speculation that it might have something to do with
 				the recent change of regulation in the Moore-Lee Corporation, a major funder of the ship, when M-L

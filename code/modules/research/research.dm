@@ -44,7 +44,8 @@ research holder datum.
 **	Includes all the helper procs and basic tech processing.  **
 ***************************************************************/
 
-/datum/research								//Holder for all the existing, archived, and known tech. Individual to console.
+/// Holder for all the existing, archived, and known tech. Individual to console.
+/datum/research
 
 									//Datum/tech go here.
 									// Possible is a list of direct datum references
@@ -53,6 +54,11 @@ research holder datum.
 	var/list/known_tech = list()				//List of locally known tech.
 	var/list/possible_designs = list()		//List of all designs
 	var/list/known_designs = list()			//List of available designs
+	/// List of designs that have been blacklisted by the server controller
+	var/list/blacklisted_designs = list()
+	/// Used during the rnd sync system, to ensure that blacklists are reverted, then cleared.
+	var/list/unblacklisted_designs = list()
+
 
 /datum/research/New()		//Insert techs into possible_tech here. Known_tech automatically updated.
 	// MON DIEU!!!
@@ -71,7 +77,7 @@ research holder datum.
 //Checks to see if tech has all the required pre-reqs.
 //Input: datum/tech; Output: 0/1 (false/true)
 /datum/research/proc/TechHasReqs(datum/tech/T)
-	if(T.req_tech.len == 0)
+	if(length(T.req_tech) == 0)
 		return TRUE
 	for(var/req in T.req_tech)
 		var/datum/tech/known = known_tech[req]
@@ -82,7 +88,11 @@ research holder datum.
 //Checks to see if design has all the required pre-reqs.
 //Input: datum/design; Output: 0/1 (false/true)
 /datum/research/proc/DesignHasReqs(datum/design/D)
-	if(D.req_tech.len == 0)
+	if(D.id in blacklisted_designs)
+		return FALSE
+	if(D.requires_whitelist && !(known_designs[D.id]))
+		return FALSE
+	if(length(D.req_tech) == 0)
 		return TRUE
 	for(var/req in D.req_tech)
 		var/datum/tech/known = known_tech[req]
@@ -101,7 +111,9 @@ research holder datum.
 	known_tech[T.id] = T
 
 /datum/research/proc/CanAddDesign2Known(datum/design/D)
-	if (D.id in known_designs)
+	if(D.id in known_designs)
+		return FALSE
+	if(D.id in blacklisted_designs)
 		return FALSE
 	return TRUE
 
@@ -124,6 +136,8 @@ research holder datum.
 		if(DesignHasReqs(PD))
 			if(!AddDesign2Known(PD))
 				stack_trace("Game attempted to add a null design to list of known designs! Design: [PD] with ID: [PD.id]")
+	if(length(blacklisted_designs)) //No need to run this unless there are blacklisted designs
+		known_designs -= blacklisted_designs
 	for(var/v in known_tech)
 		var/datum/tech/T = known_tech[v]
 		T.level = clamp(T.level, 0, 20)
@@ -158,6 +172,12 @@ research holder datum.
 // Arguments:
 // `other` - The research datum to send designs and techs to
 /datum/research/proc/push_data(datum/research/other)
+	other.blacklisted_designs += (blacklisted_designs - other.blacklisted_designs)
+	for(var/v in unblacklisted_designs)
+		blacklisted_designs -= v
+		other.blacklisted_designs -= v
+		unblacklisted_designs -= v
+		other.unblacklisted_designs += v //Needed so the main rnd console actually removes the rest of the blacklists in the fucking world
 	for(var/v in known_tech)
 		var/datum/tech/T = known_tech[v]
 		other.AddTech2Known(T)
@@ -230,7 +250,8 @@ research holder datum.
 **	Includes all the various technoliges and what they make.  **
 ***************************************************************/
 
-/datum/tech	//Datum of individual technologies.
+/// Datum of individual technologies.
+/datum/tech
 	var/name = "name"					//Name of the technology.
 	var/desc = "description"			//General description of what it does and what it makes.
 	var/id = "id"						//An easily referenced ID. Must be alphanumeric, lower-case, and no symbols.
@@ -268,8 +289,8 @@ research holder datum.
 	max_level = 7
 
 /datum/tech/bluespace
-	name = "'Blue-space' Research"
-	desc = "Research into the sub-reality known as 'blue-space'."
+	name = "'Bluespace' Research"
+	desc = "Research into the sub-reality known as 'bluespace'."
 	id = "bluespace"
 	max_level = 7
 	rare = 2
@@ -298,7 +319,8 @@ research holder datum.
 	id = "programming"
 	max_level = 7
 
-/datum/tech/toxins //not meant to be raised by deconstruction, do not give objects toxins as an origin_tech
+/// not meant to be raised by deconstruction, do not give objects toxins as an origin_tech
+/datum/tech/toxins
 	name = "Toxins Research"
 	desc = "Research into plasma based explosive devices. Upgrade through testing explosives in the toxins lab."
 	id = "toxins"
@@ -355,7 +377,7 @@ datum/tech/robotics
 		return 0
 
 	var/cost = 0
-	for(var/i=current_level+1, i<=level, i++)
+	for(var/i = current_level + 1, i <= level, i++)
 		if(i == initial(level))
 			continue
 		cost += i*5*rare
@@ -370,11 +392,6 @@ datum/tech/robotics
 	var/datum/tech/stored
 	var/default_name = "\improper Technology Disk"
 	var/default_desc = "A disk for storing technology data for further research."
-
-/obj/item/disk/tech_disk/Initialize(mapload)
-	. = ..()
-	pixel_x = rand(-5, 5)
-	pixel_y = rand(-5, 5)
 
 /obj/item/disk/tech_disk/proc/load_tech(datum/tech/T)
 	name = "[default_name] \[[T]\]"
@@ -398,11 +415,6 @@ datum/tech/robotics
 	// Otherwise, I'd use "initial()"
 	var/default_name = "\improper Component Design Disk"
 	var/default_desc = "A disk for storing device design data for construction in lathes."
-
-/obj/item/disk/design_disk/Initialize(mapload)
-	. = ..()
-	pixel_x = rand(-5, 5)
-	pixel_y = rand(-5, 5)
 
 /obj/item/disk/design_disk/proc/load_blueprint(datum/design/D)
 	name = "[default_name] \[[D]\]"

@@ -51,6 +51,16 @@
 	build_path = /obj/item/disk/tech_disk
 	category = list("Miscellaneous")
 
+/datum/design/training_disk
+	name = "Training Authentification Disk"
+	desc = "Replacement authentication disk for the nuclear training bomb."
+	id = "training_nad"
+	req_tech = list("programming" = 1)
+	build_type = PROTOLATHE | AUTOLATHE
+	materials = list(MAT_METAL = 300, MAT_GLASS = 100)
+	build_path = /obj/item/disk/nuclear/training
+	category = list("Miscellaneous")
+
 /datum/design/digital_camera
 	name = "Digital Camera"
 	desc = "Produce an enhanced version of the standard issue camera."
@@ -59,6 +69,16 @@
 	build_type = PROTOLATHE
 	materials = list(MAT_METAL = 500, MAT_GLASS = 300)
 	build_path = /obj/item/camera/digital
+	category = list("Miscellaneous")
+
+/datum/design/video_camera
+	name = "Video Camera"
+	desc = "Produce a video camera that can send live feed to the entertainment network."
+	id = "videocamera"
+	req_tech = list("programming" = 3, "materials" = 2)
+	build_type = PROTOLATHE
+	materials = list(MAT_METAL = 1000, MAT_GLASS = 500)
+	build_path = /obj/item/videocam
 	category = list("Miscellaneous")
 
 /datum/design/safety_muzzle

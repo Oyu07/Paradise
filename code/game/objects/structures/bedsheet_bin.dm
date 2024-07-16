@@ -7,24 +7,33 @@ LINEN BINS
 /obj/item/bedsheet
 	name = "bedsheet"
 	desc = "A surprisingly soft linen bedsheet."
-	icon = 'icons/obj/items.dmi'
+	icon = 'icons/obj/bedsheet.dmi'
 	icon_state = "sheet"
 	item_state = "bedsheet"
-	layer = 4.0
+	lefthand_file = 'icons/mob/inhands/bedsheet_lefthand.dmi'
+	righthand_file = 'icons/mob/inhands/bedsheet_righthand.dmi'
+	layer = 4
 	throwforce = 1
 	throw_speed = 1
 	throw_range = 2
 	w_class = WEIGHT_CLASS_TINY
 	item_color = "white"
 	resistance_flags = FLAMMABLE
-	slot_flags = SLOT_BACK
+	slot_flags = SLOT_FLAG_BACK
 
 	dog_fashion = /datum/dog_fashion/head/ghost
 	var/list/dream_messages = list("white")
 	var/list/nightmare_messages = list("black")
 	var/comfort = 0.5
 
+/obj/item/bedsheet/Initialize(mapload)
+	. = ..()
+	AddComponent(/datum/component/surgery_initiator/cloth, null, 0.45)  // honestly, not bad.
 
+/obj/item/bedsheet/attack_hand(mob/user)
+	if(isturf(loc) && user.Move_Pulled(src)) // make sure its on the ground first, prevents a speed exploit
+		return
+	return ..()
 
 /obj/item/bedsheet/attack_self(mob/user as mob)
 	user.drop_item()
@@ -108,7 +117,7 @@ LINEN BINS
 /obj/item/bedsheet/black
 	icon_state = "sheetblack"
 	item_state = "bedsheetblack"
-	item_color = "sheetblack"
+	item_color = "black"
 	dream_messages = list("black")
 	nightmare_messages = list("the void of space")
 
@@ -180,7 +189,6 @@ LINEN BINS
 	dream_messages = list("authority", "a silvery ID", "handcuffs", "a baton", "a flashbang", "sunglasses", "the head of security")
 	nightmare_messages = list("the clown", "a toolbox", "sHiTcUrItY", "why did you put them in for 50 minutes")
 
-
 /obj/item/bedsheet/hop
 	name = "head of personnel's bedsheet"
 	desc = "It is decorated with a key emblem.  For those rare moments when you can rest and cuddle with Ian without someone screaming for you over the radio."
@@ -242,7 +250,6 @@ LINEN BINS
 	dream_messages = list("a tome", "a floating red crystal", "a glowing sword", "a bloody symbol", "a massive humanoid figure")
 	nightmare_messages = list("a tome", "a floating red crystal", "a glowing sword", "a bloody symbol", "a massive humanoid figure")
 
-
 /obj/item/bedsheet/wiz
 	name = "wizard's bedsheet"
 	desc = "A special fabric enchanted with magic so you can have an enchanted night.  It even glows!"
@@ -252,11 +259,9 @@ LINEN BINS
 	dream_messages = list("a book", "an explosion", "lightning", "a staff", "a skeleton", "a robe", "magic")
 	nightmare_messages = list("a toolbox", "solars")
 
-
-
 /obj/structure/bedsheetbin
 	name = "linen bin"
-	desc = "A linen bin. It looks rather cosy."
+	desc = "A linen bin. It looks rather cozy."
 	icon = 'icons/obj/structures.dmi'
 	icon_state = "linenbin-full"
 	anchored = TRUE
@@ -267,7 +272,7 @@ LINEN BINS
 	var/obj/item/hidden = null
 
 /obj/structure/bedsheetbin/Destroy()
-	QDEL_LIST(sheets)
+	QDEL_LIST_CONTENTS(sheets)
 	if(hidden)
 		hidden.forceMove(get_turf(src))
 		hidden = null
@@ -288,11 +293,12 @@ LINEN BINS
 	switch(amount)
 		if(0)
 			icon_state = "linenbin-empty"
-		if(1 to 10)
+		if(1 to 6)
+			icon_state = "linenbin-few"
+		if(7 to 15)
 			icon_state = "linenbin-half"
 		else
 			icon_state = "linenbin-full"
-
 
 /obj/structure/bedsheetbin/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume, global_overlay = TRUE)
 	if(amount)
@@ -304,6 +310,11 @@ LINEN BINS
 	amount = 0
 	extinguish()
 	update_icon()
+
+/obj/structure/bedsheetbin/wrench_act(mob/user, obj/item/I)
+	if(user.a_intent == INTENT_HARM)
+		default_unfasten_wrench(user, I, time = 20)
+		return TRUE
 
 /obj/structure/bedsheetbin/attackby(obj/item/I, mob/user, params)
 	if(istype(I, /obj/item/bedsheet))
@@ -332,8 +343,8 @@ LINEN BINS
 		amount--
 
 		var/obj/item/bedsheet/B
-		if(sheets.len > 0)
-			B = sheets[sheets.len]
+		if(length(sheets) > 0)
+			B = sheets[length(sheets)]
 			sheets.Remove(B)
 
 		else
@@ -357,8 +368,8 @@ LINEN BINS
 		amount--
 
 		var/obj/item/bedsheet/B
-		if(sheets.len > 0)
-			B = sheets[sheets.len]
+		if(length(sheets) > 0)
+			B = sheets[length(sheets)]
 			sheets.Remove(B)
 
 		else

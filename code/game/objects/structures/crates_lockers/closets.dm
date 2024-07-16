@@ -6,7 +6,7 @@
 	density = TRUE
 	max_integrity = 200
 	integrity_failure = 50
-	armor = list(MELEE = 20, BULLET = 10, LASER = 10, ENERGY = 0, BOMB = 10, BIO = 0, RAD = 0, FIRE = 70, ACID = 60)
+	armor = list(MELEE = 20, BULLET = 10, LASER = 10, ENERGY = 0, BOMB = 10, RAD = 0, FIRE = 70, ACID = 60)
 	var/icon_closed
 	var/icon_opened
 	var/open_door_sprite = "generic_door"
@@ -38,7 +38,7 @@
 		// This includes maint loot spawners. The problem with that is if a closet loads before a spawner,
 		// the loot will just be in a pile. Adding a timer with 0 delay will cause it to only take in contents once the MC has loaded,
 		// therefore solving the issue on mapload. During rounds, everything will happen as normal
-		addtimer(CALLBACK(src, .proc/take_contents), 0)
+		addtimer(CALLBACK(src, PROC_REF(take_contents)), 0)
 	populate_contents() // Spawn all its stuff
 	update_icon() // Set it to the right icon if needed
 
@@ -57,8 +57,9 @@
 			break
 
 // Fix for #383 - C4 deleting fridges with corpses
-/obj/structure/closet/Destroy()
-	dump_contents()
+/obj/structure/closet/Destroy(force)
+	if(!force)
+		dump_contents()
 	return ..()
 
 /obj/structure/closet/CanPass(atom/movable/mover, turf/target, height=0)
@@ -90,6 +91,10 @@
 			step(AM2, dir)
 	if(throwing)
 		throwing.finalize(FALSE)
+
+/obj/structure/closet/extinguish_light(force)
+	for(var/atom/A in contents)
+		A.extinguish_light(force)
 
 /obj/structure/closet/proc/open()
 	if(opened)
@@ -131,9 +136,9 @@
 	for(var/mob/M in loc)
 		if(itemcount >= storage_capacity)
 			break
-		if(istype(M, /mob/dead/observer))
+		if(isobserver(M))
 			continue
-		if(istype(M, /mob/living/simple_animal/bot/mulebot))
+		if(istype(M, /mob/living/simple_animal/bot/mulebot) || iscameramob(M))
 			continue
 		if(M.buckled || M.anchored || M.has_buckled_mobs())
 			continue
@@ -190,6 +195,9 @@
 		if(!user.drop_item()) //couldn't drop the item
 			to_chat(user, "<span class='notice'>\The [W] is stuck to your hand, you cannot put it in \the [src]!</span>")
 			return
+		if(W.loc != user.loc)
+			// It went somewhere else, don't teleport it back.
+			return
 		if(W)
 			W.forceMove(loc)
 			return TRUE // It's resolved. No afterattack needed. Stops you from emagging lockers when putting in an emag
@@ -233,17 +241,19 @@
 
 /obj/structure/closet/MouseDrop_T(atom/movable/O, mob/living/user)
 	..()
-	if(istype(O, /obj/screen))	//fix for HUD elements making their way into the world	-Pete
+	if(is_screen_atom(O))	//fix for HUD elements making their way into the world	-Pete
 		return
 	if(O.loc == user)
 		return
 	if(user.restrained() || HAS_TRAIT(user, TRAIT_HANDS_BLOCKED))
 		return
-	if((!( istype(O, /atom/movable) ) || O.anchored || get_dist(user, src) > 1 || get_dist(user, O) > 1 || user.contents.Find(src)))
+	if((!istype(O, /atom/movable) || O.anchored || get_dist(user, src) > 1 || get_dist(user, O) > 1 || user.contents.Find(src)))
+		return
+	if(!ishuman(user) && !isrobot(user)) //No ghosts, you cannot shove people into fucking lockers
 		return
 	if(user.loc==null) // just in case someone manages to get a closet into the blue light dimension, as unlikely as that seems
 		return
-	if(!istype(user.loc, /turf)) // are you in a container/closet/pod/etc?
+	if(!isturf(user.loc)) // are you in a container/closet/pod/etc?
 		return
 	if(!opened)
 		return
@@ -253,6 +263,7 @@
 	if(user != O)
 		user.visible_message("<span class='danger'>[user] stuffs [O] into [src]!</span>", "<span class='danger'>You stuff [O] into [src]!</span>")
 	add_fingerprint(user)
+	return TRUE
 
 /obj/structure/closet/attack_ai(mob/user)
 	if(isrobot(user) && Adjacent(user)) //Robots can open/close it, but not the AI
@@ -267,11 +278,29 @@
 		if(!lastbang)
 			lastbang = 1
 			for(var/mob/M in hearers(src, null))
-				to_chat(M, text("<FONT size=[]>BANG, bang!</FONT>", max(0, 5 - get_dist(src, M))))
+				to_chat(M, "<FONT size=[max(0, 5 - get_dist(src, M))]>BANG, bang!</FONT>")
 			spawn(30)
 				lastbang = 0
 
 /obj/structure/closet/attack_hand(mob/user)
+	add_fingerprint(user)
+	toggle(user)
+
+/obj/structure/closet/attack_animal(mob/living/user)
+	if(user.a_intent == INTENT_HARM || welded || locked)
+		return ..()
+	if(!user.mind) // Stops mindless mobs from opening lockers + endlessly opening/closing crates instead of attacking
+		return ..()
+	if(user.mob_size < MOB_SIZE_HUMAN)
+		return ..()
+	add_fingerprint(user)
+	toggle(user)
+
+/obj/structure/closet/attack_alien(mob/user)
+	if(user.a_intent == INTENT_HARM || welded || locked)
+		return ..()
+	if(!user.mind)
+		return ..()
 	add_fingerprint(user)
 	toggle(user)
 
@@ -282,22 +311,7 @@
 // tk grab then use on self
 /obj/structure/closet/attack_self_tk(mob/user)
 	add_fingerprint(user)
-	if(!toggle())
-		to_chat(usr, "<span class='notice'>It won't budge!</span>")
-
-/obj/structure/closet/verb/verb_toggleopen()
-	set src in oview(1)
-	set category = null
-	set name = "Toggle Open"
-
-	if(usr.incapacitated())
-		return
-
-	if(ishuman(usr) || isrobot(usr))
-		add_fingerprint(usr)
-		toggle(usr)
-		return
-	to_chat(usr, "<span class='warning'>This mob type can't use this verb.</span>")
+	toggle(user)
 
 /obj/structure/closet/update_icon_state()
 	if(!opened)
@@ -365,7 +379,7 @@
 
 /obj/structure/closet/get_remote_view_fullscreens(mob/user)
 	if(user.stat == DEAD || !(user.sight & (SEEOBJS|SEEMOBS)))
-		user.overlay_fullscreen("remote_view", /obj/screen/fullscreen/impaired, 1)
+		user.overlay_fullscreen("remote_view", /atom/movable/screen/fullscreen/stretch/impaired, 1)
 
 /obj/structure/closet/ex_act(severity)
 	for(var/atom/A in contents)
@@ -383,6 +397,22 @@
 /obj/structure/closet/force_eject_occupant(mob/target)
 	// Its okay to silently teleport mobs out of lockers, since the only thing affected is their contents list.
 	return
+
+/obj/structure/closet/shove_impact(mob/living/target, mob/living/attacker)
+	if(opened && can_close())
+		target.forceMove(src)
+		visible_message("<span class='danger'>[attacker] shoves [target] inside [src]!</span>", "<span class='warning'>You hear a thud, and something clangs shut.</span>")
+		close()
+		add_attack_logs(attacker, target, "shoved into [src]")
+		return TRUE
+
+	if(!opened && can_open())
+		open()
+		visible_message("<span class='danger'>[attacker] shoves [target] against [src], knocking it open!</span>")
+		target.KnockDown(3 SECONDS)
+		return TRUE
+
+	return ..()
 
 
 /obj/structure/closet/bluespace

@@ -3,6 +3,7 @@
 
 /obj/machinery/iv_drip
 	name = "\improper IV drip"
+	desc = "Simply attach a bloodbag and puncture the patient with a needle, they'll have more blood in no time."
 	icon = 'icons/goonstation/objects/iv.dmi'
 	icon_state = "stand"
 	anchored = FALSE
@@ -39,13 +40,16 @@
 			. += filling
 
 /obj/machinery/iv_drip/MouseDrop(mob/living/target)
-	if(usr.incapacitated())
+	var/mob/user = usr
+	if(HAS_TRAIT(user, TRAIT_HANDS_BLOCKED))
+		return
+	if(!ishuman(user))
 		return
 
-	if(!ishuman(usr) || !iscarbon(target))
-		return
-
-	if(Adjacent(target) && usr.Adjacent(target))
+	if(Adjacent(target) && user.Adjacent(target))
+		if(!bag)
+			to_chat(user, "<span class='warning'>There's no IV bag connected to [src]!</span>")
+			return
 		bag.afterattack(target, usr, TRUE)
 		START_PROCESSING(SSmachines, src)
 
@@ -69,7 +73,7 @@
 		to_chat(user, "<span class='notice'>You attach [I] to [src].</span>")
 		update_icon(UPDATE_OVERLAYS)
 		START_PROCESSING(SSmachines, src)
-	else if (bag && istype(I, /obj/item/reagent_containers))
+	else if(bag && istype(I, /obj/item/reagent_containers))
 		bag.attackby(I)
 		I.afterattack(bag, usr, TRUE)
 		update_icon(UPDATE_OVERLAYS)
@@ -89,8 +93,8 @@
 /obj/machinery/iv_drip/Move(NewLoc, direct)
 	. = ..()
 	if(!.) // ..() will return 0 if we didn't actually move anywhere.
-		return .
-	playsound(loc, pick('sound/items/cartwheel1.ogg', 'sound/items/cartwheel2.ogg'), 100, 1, ignore_walls = FALSE)
+		return
+	playsound(loc, pick('sound/items/cartwheel1.ogg', 'sound/items/cartwheel2.ogg'), 100, TRUE, ignore_walls = FALSE)
 
 #undef IV_TAKING
 #undef IV_INJECTING

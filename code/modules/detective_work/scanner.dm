@@ -10,14 +10,14 @@
 	w_class = WEIGHT_CLASS_NORMAL
 	item_state = "electronic"
 	flags = CONDUCT | NOBLUDGEON
-	slot_flags = SLOT_BELT
+	slot_flags = SLOT_FLAG_BELT
 	origin_tech = "engineering=4;biotech=2;programming=5"
 	var/scanning = FALSE
 	var/list/log = list()
 	actions_types = list(/datum/action/item_action/print_forensic_report, /datum/action/item_action/clear_records)
 
 /obj/item/detective_scanner/attack_self(mob/user)
-	var/search = input(user, "Enter name, fingerprint or blood DNA.", "Find record", "")
+	var/search = tgui_input_text(user, "Enter name, fingerprint or blood DNA.", "Find record")
 
 	if(!search || user.stat || user.incapacitated())
 		return
@@ -71,7 +71,7 @@
 		to_chat(usr, "<span class='notice'>Printing report, please wait...</span>")
 		playsound(loc, 'sound/goonstation/machines/printer_thermal.ogg', 50, 1)
 
-		addtimer(CALLBACK(src, .proc/make_paper, log), 10 SECONDS) // Create our paper
+		addtimer(CALLBACK(src, PROC_REF(make_paper), log), 10 SECONDS) // Create our paper
 		log = list() // Clear the logs
 		scanning = FALSE
 	else
@@ -95,7 +95,7 @@
 	if(length(log) && !scanning)
 		log = list()
 		playsound(loc, 'sound/machines/ding.ogg', 40)
-		addtimer(CALLBACK(GLOBAL_PROC, .proc/to_chat, usr, "<span class='notice'>Scanner logs cleared.</span>"), 1.5 SECONDS) //Timer so that it clears on the 'ding'
+		addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(to_chat), usr, "<span class='notice'>Scanner logs cleared.</span>"), 1.5 SECONDS) //Timer so that it clears on the 'ding'
 	else
 		to_chat(usr, "<span class='warning'>The scanner has no logs or is in use.</span>")
 

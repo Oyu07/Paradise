@@ -2,20 +2,20 @@
 	name = "Berserker"
 	max_stages = 2
 	stage_prob = 5
-	spread_text = "Non-Contagious"
-	spread_flags = SPECIAL
+	spread_text = "Non-contagious"
+	spread_flags = NON_CONTAGIOUS
 	cure_text = "Anti-Psychotics"
 	cures = list("haloperidol")
 	agent = "Jagged Crystals"
 	cure_chance = 10
 	viable_mobtypes = list(/mob/living/carbon/human)
 	desc = "Swearing, shouting, attacking nearby crew members uncontrollably."
-	severity = DANGEROUS
+	severity = BIOHAZARD
 	disease_flags = CURABLE
-	spread_flags = NON_CONTAGIOUS
 
 /datum/disease/berserker/stage_act()
-	..()
+	if(!..())
+		return FALSE
 	if(affected_mob.reagents.has_reagent("thc"))
 		to_chat(affected_mob, "<span class='notice'>You mellow out.</span>")
 		cure()
@@ -47,9 +47,9 @@
 						continue
 					var/damage = rand(1, 5)
 					if(prob(80))
-						playsound(affected_mob.loc, "punch", 25, 1, -1)
+						playsound(affected_mob.loc, "punch", 25, TRUE, -1)
 						affected_mob.visible_message("<span class='danger'>[affected_mob] hits [M] with [affected_mob.p_their()] thrashing!</span>")
 						M.adjustBruteLoss(damage)
 					else
-						playsound(affected_mob.loc, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
+						playsound(affected_mob.loc, 'sound/weapons/punchmiss.ogg', 25, TRUE, -1)
 						affected_mob.visible_message("<span class='danger'>[affected_mob] fails to hit [M] with [affected_mob.p_their()] thrashing!</span>")

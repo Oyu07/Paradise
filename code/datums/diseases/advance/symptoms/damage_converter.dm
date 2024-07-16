@@ -37,12 +37,12 @@ Bonus
 
 	var/get_damage = rand(1, 2)
 
-	if(istype(M, /mob/living/carbon/human))
+	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 
 		var/list/parts = H.get_damaged_organs(TRUE, TRUE, AFFECT_ORGANIC_ORGAN) //1,1 because it needs inputs.
 
-		if(!parts.len)
+		if(!length(parts))
 			return
 		var/healed = 0
 		for(var/obj/item/organ/external/E in parts)

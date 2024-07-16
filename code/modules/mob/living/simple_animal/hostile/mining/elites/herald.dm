@@ -28,6 +28,7 @@
 	health = 1000
 	melee_damage_lower = 20
 	melee_damage_upper = 20
+	armour_penetration_percentage = 50
 	light_power = 5
 	light_range = 2
 	light_color = "#FF0000"
@@ -53,7 +54,7 @@
 /mob/living/simple_animal/hostile/asteroid/elite/herald/death()
 	. = ..()
 	if(!is_mirror)
-		addtimer(CALLBACK(src, .proc/become_ghost), 0.8 SECONDS)
+		addtimer(CALLBACK(src, PROC_REF(become_ghost)), 0.8 SECONDS)
 		if(my_mirror)
 			QDEL_NULL(my_mirror)
 
@@ -72,25 +73,25 @@
 
 /datum/action/innate/elite_attack/herald_trishot
 	name = "Triple Shot"
-	button_icon_state = "herald_trishot"
+	button_overlay_icon_state = "herald_trishot"
 	chosen_message = "<span class='boldwarning'>You are now firing three shots in your chosen direction.</span>"
 	chosen_attack_num = HERALD_TRISHOT
 
 /datum/action/innate/elite_attack/herald_directionalshot
 	name = "Circular Shot"
-	button_icon_state = "herald_directionalshot"
+	button_overlay_icon_state = "herald_directionalshot"
 	chosen_message = "<span class='boldwarning'>You are firing projectiles in all directions.</span>"
 	chosen_attack_num = HERALD_DIRECTIONALSHOT
 
 /datum/action/innate/elite_attack/herald_teleshot
 	name = "Teleport Shot"
-	button_icon_state = "herald_teleshot"
+	button_overlay_icon_state = "herald_teleshot"
 	chosen_message = "<span class='boldwarning'>You will now fire a shot which teleports you where it lands.</span>"
 	chosen_attack_num = HERALD_TELESHOT
 
 /datum/action/innate/elite_attack/herald_mirror
 	name = "Summon Mirror"
-	button_icon_state = "herald_mirror"
+	button_overlay_icon_state = "herald_mirror"
 	chosen_message = "<span class='boldwarning'>You will spawn a mirror which duplicates your attacks.</span>"
 	chosen_attack_num = HERALD_MIRROR
 
@@ -127,7 +128,7 @@
 	var/turf/startloc = get_turf(src)
 	if(!is_teleshot)
 		var/obj/item/projectile/H = new /obj/item/projectile/herald(startloc)
-		H.preparePixelProjectile(marker, marker, src)
+		H.preparePixelProjectile(marker, startloc)
 		H.firer = src
 		H.firer_source_atom = src
 		if(target)
@@ -138,7 +139,7 @@
 			shoot_projectile(marker, set_angle - 15, FALSE, FALSE)
 	else
 		var/obj/item/projectile/H = new /obj/item/projectile/herald/teleshot(startloc)
-		H.preparePixelProjectile(marker, marker, startloc)
+		H.preparePixelProjectile(marker, startloc)
 		H.firer = src
 		H.firer_source_atom = src
 		if(target)
@@ -151,13 +152,13 @@
 	var/target_turf = get_turf(target)
 	var/angle_to_target = get_angle(src, target_turf)
 	say("Pray")
-	SLEEP_CHECK_DEATH(0.75 SECONDS)// no point blank instant shotgun.
+	SLEEP_CHECK_DEATH(0.5 SECONDS)// no point blank instant shotgun.
 	shoot_projectile(target_turf, angle_to_target, FALSE, TRUE)
-	addtimer(CALLBACK(src, .proc/shoot_projectile, target_turf, angle_to_target, FALSE, TRUE), 0.2 SECONDS)
+	addtimer(CALLBACK(src, PROC_REF(shoot_projectile), target_turf, angle_to_target, FALSE, TRUE), 0.2 SECONDS)
 	if(health < maxHealth * 0.5 && !is_mirror)
 		playsound(get_turf(src), 'sound/magic/clockwork/invoke_general.ogg', 20, TRUE)
-		addtimer(CALLBACK(src, .proc/shoot_projectile, target_turf, angle_to_target, FALSE, TRUE), 1 SECONDS)
-		addtimer(CALLBACK(src, .proc/shoot_projectile, target_turf, angle_to_target, FALSE, TRUE), 1.2 SECONDS)
+		addtimer(CALLBACK(src, PROC_REF(shoot_projectile), target_turf, angle_to_target, FALSE, TRUE), 1 SECONDS)
+		addtimer(CALLBACK(src, PROC_REF(shoot_projectile), target_turf, angle_to_target, FALSE, TRUE), 1.2 SECONDS)
 
 /mob/living/simple_animal/hostile/asteroid/elite/herald/proc/herald_circleshot(offset)
 	var/static/list/directional_shot_angles = list(1, 45, 90, 135, 180, 225, 270, 315) //Trust me, use 1. It really doesn't like zero.
@@ -174,10 +175,10 @@
 	if(!is_mirror)
 		icon_state = "herald_enraged"
 	playsound(get_turf(src), 'sound/magic/clockwork/invoke_general.ogg', 20, TRUE)
-	addtimer(CALLBACK(src, .proc/herald_circleshot, 0), 0.5 SECONDS)
+	addtimer(CALLBACK(src, PROC_REF(herald_circleshot), 0), 0.5 SECONDS)
 	if(health < maxHealth * 0.5 && !is_mirror)
-		addtimer(CALLBACK(src, .proc/herald_circleshot, 22.5), 1.5 SECONDS)
-	addtimer(CALLBACK(src, .proc/unenrage), 20)
+		addtimer(CALLBACK(src, PROC_REF(herald_circleshot), 22.5), 1.5 SECONDS)
+	addtimer(CALLBACK(src, PROC_REF(unenrage)), 20)
 
 /mob/living/simple_animal/hostile/asteroid/elite/herald/proc/herald_teleshot(target)
 	ranged_cooldown = world.time + 3 SECONDS * revive_multiplier()
@@ -263,7 +264,7 @@
 	icon_state = "herald_cloak"
 	item_state = "herald_cloak"
 	item_color = "herald_cloak"
-	slot_flags = SLOT_TIE
+	slot_flags = SLOT_FLAG_TIE
 	allow_duplicates = FALSE
 	actions_types = list(/datum/action/item_action/accessory/herald)
 
@@ -283,7 +284,7 @@
 			continue
 		if(T.z != usr.z) //No crossing zlvls
 			continue
-		if(istype(i, /obj/item/shield/mirror) && !iscultist(usr)) //No teleporting to cult bases
+		if(istype(i, /obj/item/shield/mirror) && !IS_CULTIST(usr)) //No teleporting to cult bases
 			continue
 		if(istype(i, /obj/structure/mirror))
 			var/obj/structure/mirror/B = i
@@ -303,7 +304,7 @@
 	if(!found_mirror)
 		to_chat(usr, "<span class='warning'>You are not close enough to a working mirror to teleport!</span>")
 		return
-	var/input_mirror = input(usr, "Choose a mirror to teleport to.", "Mirror to Teleport to") as null|anything in mirrors_to_use
+	var/input_mirror = tgui_input_list(usr, "Choose a mirror to teleport to.", "Mirror to Teleport to", mirrors_to_use)
 	var/obj/chosen = mirrors_to_use[input_mirror]
 	if(chosen == null)
 		return
@@ -321,13 +322,14 @@
 		if(istype(chosen, /obj/structure/mirror))
 			var/obj/structure/mirror/M = chosen
 			M.obj_break("brute")
-		else if(istype(chosen, /obj/item/shield/mirror))
+		else if(istype(chosen, /obj/item/shield/mirror) || istype(chosen, /obj/item/handheld_mirror))
 			var/turf/T = get_turf(usr)
 			new /obj/effect/temp_visual/cult/sparks(T)
 			playsound(T, 'sound/effects/glassbr3.ogg', 100)
-			if(isliving(chosen.loc))
-				var/mob/living/shatterer = loc
-				shatterer.Weaken(6 SECONDS)
+			for(var/mob/living/L in T)
+				if(L == usr)
+					continue
+				L.Weaken(6 SECONDS)
 			qdel(chosen)
 
 #undef HERALD_TRISHOT

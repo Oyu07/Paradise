@@ -1,22 +1,27 @@
-/obj/item/gun/magic/wand/
+/obj/item/gun/magic/wand
 	name = "wand of nothing"
 	desc = "It's not just a stick, it's a MAGIC stick!"
 	ammo_type = /obj/item/ammo_casing/magic
+	lefthand_file = 'icons/mob/inhands/weapons_lefthand.dmi'
+	righthand_file = 'icons/mob/inhands/weapons_righthand.dmi'
 	icon_state = "nothingwand"
 	item_state = "wand"
 	belt_icon = "wand_nothing"
 	w_class = WEIGHT_CLASS_SMALL
 	can_charge = FALSE
 	max_charges = 100 //100, 50, 50, 34 (max charge distribution by 25%ths)
-	var/variable_charges = 1
+	var/variable_charges = TRUE
+	execution_speed = 3 SECONDS
 
 /obj/item/gun/magic/wand/Initialize(mapload)
 	. = ..()
 	if(prob(75) && variable_charges) //25% chance of listed max charges, 50% chance of 1/2 max charges, 25% chance of 1/3 max charges
 		if(prob(33))
 			max_charges = CEILING(max_charges / 3, 1)
+			charges = max_charges
 		else
 			max_charges = CEILING(max_charges / 2, 1)
+			charges = max_charges
 
 /obj/item/gun/magic/wand/examine(mob/user)
 	. = ..()
@@ -49,10 +54,10 @@
 	update_icon()
 
 /obj/item/gun/magic/wand/proc/zap_self(mob/living/user)
-	user.visible_message("<span class='danger'>[user] zaps [user.p_them()]self with [src].</span>")
+	user.visible_message("<span class='danger'>[user] zaps [user.p_themselves()] with [src].</span>")
 	playsound(user, fire_sound, 50, 1)
-	user.create_attack_log("<b>[key_name(user)]</b> zapped [user.p_them()]self with a <b>[src]</b>")
-	add_attack_logs(user, user, "zapped [user.p_them()]self with a [src]", ATKLOG_ALL)
+	user.create_attack_log("<b>[key_name(user)]</b> zapped [user.p_themselves()] with a <b>[src]</b>")
+	add_attack_logs(user, user, "zapped [user.p_themselves()] with a [src]", ATKLOG_ALL)
 
 /////////////////////////////////////
 //WAND OF DEATH
@@ -139,7 +144,7 @@
 /obj/item/gun/magic/wand/teleport/zap_self(mob/living/user)
 	do_teleport(user, user, 10)
 	var/datum/effect_system/smoke_spread/smoke = new
-	smoke.set_up(10, 0, user.loc)
+	smoke.set_up(10, FALSE, user)
 	smoke.start()
 	charges--
 	..()
@@ -194,5 +199,31 @@
 
 /obj/item/gun/magic/wand/slipping/zap_self(mob/living/user)
 	to_chat(user, "<span class='notice'>You feel rather silly!.</span>")
+	charges--
+	..()
+
+/////////////////////////////////////
+//WAND OF CHAOS - Only spawned by the Staff of Chaos as a rare random effect
+/////////////////////////////////////
+/obj/item/gun/magic/wand/chaos
+	name = "wand of chaos"
+	desc = "Payback time!"
+	fire_sound = 'sound/magic/staff_chaos.ogg'
+	ammo_type = /obj/item/ammo_casing/magic/chaos
+	icon_state = "chaoswand"
+	max_charges = 20
+	variable_charges = FALSE
+	no_den_usage = TRUE
+
+/obj/item/gun/magic/wand/chaos/zap_self(mob/living/user)
+	if(!ishuman(user))
+		return
+	to_chat(user, "<span class='chaosneutral'>[pick("Chaos chaos!", "You can do anything!", "You hear a mariachi band playing in the distance.", \
+		"Would you like a glass of water?", "What fun is there in making sense?", "Maybe you ought to go back home and crawl under your bed.", \
+		"Time to dual wield chaos wands!", "Sixty percent of the time, it works every time.", "Cheese for everyone!", "You hear a deep voice cackling.", \
+		"Xom bursts into laughter!", "Xom thinks this is hilarious!")]</span>")
+	var/obj/item/projectile/magic/chaos/proj = new /obj/item/projectile/magic/chaos(src)
+	proj.chaos_chaos(user)
+	qdel(proj)
 	charges--
 	..()

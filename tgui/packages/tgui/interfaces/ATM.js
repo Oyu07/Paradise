@@ -1,15 +1,5 @@
-import { Fragment } from 'inferno';
 import { useBackend, useLocalState } from '../backend';
-import {
-  Button,
-  Table,
-  Icon,
-  Input,
-  Divider,
-  Box,
-  LabeledList,
-  Section,
-} from '../components';
+import { Button, Table, Icon, Input, Divider, Box, LabeledList, Section } from '../components';
 import { Window } from '../layouts';
 
 /*
@@ -21,27 +11,20 @@ import { Window } from '../layouts';
 
 export const ATM = (props, context) => {
   const { act, data } = useBackend(context);
-  const {
-    view_screen,
-    authenticated_account,
-    ticks_left_locked_down,
-    linked_db,
-  } = data;
+  const { view_screen, authenticated_account, ticks_left_locked_down, linked_db } = data;
   let body;
   if (ticks_left_locked_down > 0) {
     body = (
       <Box bold color="bad">
         <Icon name="exclamation-triangle" />
-        Maximum number of pin attempts exceeded! Access to this ATM has been
-        temporarily disabled.
+        Maximum number of pin attempts exceeded! Access to this ATM has been temporarily disabled.
       </Box>
     );
   } else if (!linked_db) {
     body = (
       <Box bold color="bad">
         <Icon name="exclamation-triangle" />
-        Unable to connect to accounts database, please retry and if the issue
-        persists contact Nanotrasen IT support.
+        Unable to connect to accounts database, please retry and if the issue persists contact Nanotrasen IT support.
       </Box>
     );
   } else if (authenticated_account) {
@@ -62,7 +45,7 @@ export const ATM = (props, context) => {
     body = <LoginScreen />;
   }
   return (
-    <Window resizable>
+    <Window width={550} height={650}>
       <Window.Content scrollable>
         <IntroductionAndCard />
         <Section>{body}</Section>
@@ -76,20 +59,11 @@ const IntroductionAndCard = (props, context) => {
   const { machine_id, held_card_name } = data;
   return (
     <Section title="Nanotrasen Automatic Teller Machine">
-      <Box>For all your monetary need!</Box>
-      <Divider />
-      <Box>
-        <Icon name="info-circle" /> This terminal is <i>{machine_id}</i>, report
-        this code when contacting Nanotrasen IT Support.
-      </Box>
+      <Box>For all your monetary needs!</Box>
       <Divider />
       <LabeledList>
         <LabeledList.Item label="Card">
-          <Button
-            content={held_card_name}
-            icon="eject"
-            onClick={() => act('insert_card')}
-          />
+          <Button content={held_card_name} icon="eject" onClick={() => act('insert_card')} />
         </LabeledList.Item>
       </LabeledList>
     </Section>
@@ -105,48 +79,26 @@ const ChangeSecurityLevel = (props, context) => {
         <Divider />
         <LabeledList.Item label="Level">
           <Button
-            content="Zero"
+            content="Account Number"
             icon="unlock"
             selected={security_level === 0}
-            onClick={() =>
-              act('change_security_level', { new_security_level: 0 })
-            }
+            onClick={() => act('change_security_level', { new_security_level: 1 })}
           />
         </LabeledList.Item>
         <LabeledList.Item label="Description">
-          Either the account number or card is required to access this account.
-          EFTPOS transactions will require a card and ask for a pin, but not
-          verify the pin is correct.
+          Either the account number or card is required to access this account. EFTPOS transactions will require a card.
         </LabeledList.Item>
         <Divider />
         <LabeledList.Item label="Level">
           <Button
-            content="One"
+            content="Account Pin"
             icon="unlock"
-            selected={security_level === 1}
-            onClick={() =>
-              act('change_security_level', { new_security_level: 1 })
-            }
-          />
-        </LabeledList.Item>
-        <LabeledList.Item label="Description">
-          An account number and pin must be manually entered to access this
-          account and process transactions.
-        </LabeledList.Item>
-        <Divider />
-        <LabeledList.Item label="Level">
-          <Button
-            content="Two"
             selected={security_level === 2}
-            icon="unlock"
-            onClick={() =>
-              act('change_security_level', { new_security_level: 2 })
-            }
+            onClick={() => act('change_security_level', { new_security_level: 2 })}
           />
         </LabeledList.Item>
         <LabeledList.Item label="Description">
-          In addition to account number and pin, a card is required to access
-          this account and process transactions.
+          An account number and pin must be manually entered to access this account and process transactions.
         </LabeledList.Item>
       </LabeledList>
       <Divider />
@@ -157,29 +109,18 @@ const ChangeSecurityLevel = (props, context) => {
 
 const TransferFunds = (props, context) => {
   const { act, data } = useBackend(context);
-  const [targetAccNumber, setTargetAccNumber] = useLocalState(
-    context,
-    'targetAccNumber',
-    0
-  );
-  const [fundsAmount, setFundsAmount] = useLocalState(
-    context,
-    'fundsAmount',
-    0
-  );
+  const [targetAccNumber, setTargetAccNumber] = useLocalState(context, 'targetAccNumber', 0);
+  const [fundsAmount, setFundsAmount] = useLocalState(context, 'fundsAmount', 0);
   const [purpose, setPurpose] = useLocalState(context, 'purpose', 0);
   const { money } = data;
   return (
     <Section title="Transfer Fund">
       <LabeledList>
         <LabeledList.Item label="Account Balance">${money}</LabeledList.Item>
-        <LabeledList.Item label="Target account number">
-          <Input
-            placeholder="6 Digit Number"
-            onInput={(e, value) => setTargetAccNumber(value)}
-          />
+        <LabeledList.Item label="Target Account Number">
+          <Input placeholder="7 Digit Number" onInput={(e, value) => setTargetAccNumber(value)} />
         </LabeledList.Item>
-        <LabeledList.Item label="Funds to transfer">
+        <LabeledList.Item label="Funds to Transfer">
           <Input onInput={(e, value) => setFundsAmount(value)} />
         </LabeledList.Item>
         <LabeledList.Item label="Transaction Purpose">
@@ -206,23 +147,13 @@ const TransferFunds = (props, context) => {
 
 const DefaultScreen = (props, context) => {
   const { act, data } = useBackend(context);
-  const [fundsAmount, setFundsAmount] = useLocalState(
-    context,
-    'fundsAmount',
-    0
-  );
+  const [fundsAmount, setFundsAmount] = useLocalState(context, 'fundsAmount', 0);
   const { owner_name, money } = data;
   return (
-    <Fragment>
+    <>
       <Section
         title={'Welcome, ' + owner_name}
-        buttons={
-          <Button
-            content="Logout"
-            icon="sign-out-alt"
-            onClick={() => act('logout')}
-          />
-        }
+        buttons={<Button content="Logout" icon="sign-out-alt" onClick={() => act('logout')} />}
       >
         <LabeledList>
           <LabeledList.Item label="Account Balance">${money}</LabeledList.Item>
@@ -231,7 +162,7 @@ const DefaultScreen = (props, context) => {
           </LabeledList.Item>
           <LabeledList.Item>
             <Button
-              content="Withdraw Fund"
+              content="Withdraw Funds"
               icon="sign-out-alt"
               onClick={() => act('withdrawal', { funds_amount: fundsAmount })}
             />
@@ -247,54 +178,32 @@ const DefaultScreen = (props, context) => {
           />
         </Box>
         <Box>
-          <Button
-            content="Make transfer"
-            icon="exchange-alt"
-            onClick={() => act('view_screen', { view_screen: 2 })}
-          />
+          <Button content="Make transfer" icon="exchange-alt" onClick={() => act('view_screen', { view_screen: 2 })} />
         </Box>
         <Box>
-          <Button
-            content="View transaction log"
-            icon="list"
-            onClick={() => act('view_screen', { view_screen: 3 })}
-          />
+          <Button content="View transaction log" icon="list" onClick={() => act('view_screen', { view_screen: 3 })} />
         </Box>
         <Box>
-          <Button
-            content="Print balance statement"
-            icon="print"
-            onClick={() => act('balance_statement')}
-          />
+          <Button content="Print balance statement" icon="print" onClick={() => act('balance_statement')} />
         </Box>
       </Section>
-    </Fragment>
+    </>
   );
 };
 
 const LoginScreen = (props, context) => {
   const { act, data } = useBackend(context);
   const [accountID, setAccountID] = useLocalState(context, 'accountID', null);
-  const [accountPin, setAccountPin] = useLocalState(
-    context,
-    'accountPin',
-    null
-  );
+  const [accountPin, setAccountPin] = useLocalState(context, 'accountPin', null);
   const { machine_id, held_card_name } = data;
   return (
     <Section title="Insert card or enter ID and pin to login">
       <LabeledList>
         <LabeledList.Item label="Account ID">
-          <Input
-            placeholder="6 Digit Number"
-            onInput={(e, value) => setAccountID(value)}
-          />
+          <Input placeholder="6 Digit Number" onInput={(e, value) => setAccountID(value)} />
         </LabeledList.Item>
         <LabeledList.Item label="Pin">
-          <Input
-            placeholder="6 Digit Number"
-            onInput={(e, value) => setAccountPin(value)}
-          />
+          <Input placeholder="6 Digit Number" onInput={(e, value) => setAccountPin(value)} />
         </LabeledList.Item>
         <LabeledList.Item>
           <Button
@@ -321,20 +230,16 @@ const ViewTransactionLogs = (props, context) => {
       <Table>
         <Table.Row header>
           <Table.Cell>Timestamp</Table.Cell>
-          <Table.Cell>Target</Table.Cell>
           <Table.Cell>Reason</Table.Cell>
           <Table.Cell>Value</Table.Cell>
           <Table.Cell>Terminal</Table.Cell>
         </Table.Row>
         {transaction_log.map((t) => (
           <Table.Row key={t}>
-            <Table.Cell p="1rem">
-              {t.date} {t.time}
-            </Table.Cell>
-            <Table.Cell>{t.target_name}</Table.Cell>
+            <Table.Cell>{t.time}</Table.Cell>
             <Table.Cell>{t.purpose}</Table.Cell>
-            <Table.Cell>${t.amount}</Table.Cell>
-            <Table.Cell>{t.source_terminal}</Table.Cell>
+            <Table.Cell color={t.is_deposit ? 'green' : 'red'}>${t.amount}</Table.Cell>
+            <Table.Cell>{t.target_name}</Table.Cell>
           </Table.Row>
         ))}
       </Table>
@@ -346,11 +251,5 @@ const ViewTransactionLogs = (props, context) => {
 
 const BackButton = (props, context) => {
   const { act, data } = useBackend(context);
-  return (
-    <Button
-      content="Back"
-      icon="sign-out-alt"
-      onClick={() => act('view_screen', { view_screen: 0 })}
-    />
-  );
+  return <Button content="Back" icon="sign-out-alt" onClick={() => act('view_screen', { view_screen: 0 })} />;
 };

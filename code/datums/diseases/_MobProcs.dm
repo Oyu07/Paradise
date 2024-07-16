@@ -2,13 +2,13 @@
 /mob/proc/HasDisease(datum/disease/D)
 	for(var/thing in viruses)
 		var/datum/disease/DD = thing
-		if(D.IsSame(DD))
-			return 1
-	return 0
+		if(DD.IsSame(D))
+			return TRUE
+	return FALSE
 
 
 /mob/proc/CanContractDisease(datum/disease/D)
-	if(stat == DEAD)
+	if(stat == DEAD && !D.allow_dead)
 		return FALSE
 
 	if(D.GetDiseaseID() in resistances)
@@ -30,6 +30,7 @@
 	if(!CanContractDisease(D))
 		return 0
 	AddDisease(D)
+	return TRUE
 
 
 /mob/proc/AddDisease(datum/disease/D, respect_carrier = FALSE)
@@ -51,6 +52,7 @@
 		else
 			DD.vars[V] = D.vars[V]
 
+	create_log(MISC_LOG, "has contacted the virus \"[DD]\"")
 	DD.affected_mob.med_hud_set_status()
 
 
@@ -85,7 +87,7 @@
 
 	var/target_zone = pick(head_ch;1,body_ch;2,hands_ch;3,feet_ch;4)
 
-	if(istype(src, /mob/living/carbon/human))
+	if(ishuman(src))
 		var/mob/living/carbon/human/H = src
 
 		switch(target_zone)
@@ -100,8 +102,8 @@
 				if(isobj(H.wear_suit))
 					Cl = H.wear_suit
 					passed = prob((Cl.permeability_coefficient*100) - 1)
-				if(passed && isobj(slot_w_uniform))
-					Cl = slot_w_uniform
+				if(passed && isobj(SLOT_HUD_JUMPSUIT))
+					Cl = SLOT_HUD_JUMPSUIT
 					passed = prob((Cl.permeability_coefficient*100) - 1)
 			if(3)
 				if(isobj(H.wear_suit) && H.wear_suit.body_parts_covered&HANDS)
@@ -126,6 +128,7 @@
 
 	if(passed)
 		AddDisease(D)
+	return passed
 
 
 /**
@@ -152,9 +155,14 @@
 	if(HAS_TRAIT(src, TRAIT_VIRUSIMMUNE) && !D.bypasses_immunity)
 		return FALSE
 
-	for(var/thing in D.required_organs)
-		if(!((locate(thing) in bodyparts) || (locate(thing) in internal_organs)))
-			return FALSE
+	for(var/organ in D.required_organs)
+		if(istext(organ) && get_int_organ_datum(organ))
+			continue
+		if(locate(organ) in internal_organs)
+			continue
+		if(locate(organ) in bodyparts)
+			continue
+		return FALSE
 	return ..()
 
 /mob/living/carbon/human/monkey/CanContractDisease(datum/disease/D)

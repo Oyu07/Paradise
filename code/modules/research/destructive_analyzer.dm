@@ -69,12 +69,12 @@ Note: Must be placed within 3 tiles of the R&D Console
 		to_chat(user, "<span class='warning'>[src] is busy right now.</span>")
 		return
 
-	if(istype(O, /obj/item) && !loaded_item)
+	if(isitem(O) && !loaded_item)
 		if(!O.origin_tech)
 			to_chat(user, "<span class='warning'>This doesn't seem to have a tech origin!</span>")
 			return
 		var/list/temp_tech = ConvertReqString2List(O.origin_tech)
-		if(temp_tech.len == 0)
+		if(length(temp_tech) == 0)
 			to_chat(user, "<span class='warning'>You cannot deconstruct this item!</span>")
 			return
 		if(!user.drop_item())

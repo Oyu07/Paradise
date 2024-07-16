@@ -5,10 +5,10 @@
 	icon = 'icons/obj/grenade.dmi'
 	icon_state = "grenade"
 	item_state = "grenade"
-	throw_speed = 4
+	throw_speed = 3
 	throw_range = 20
 	flags = CONDUCT
-	slot_flags = SLOT_BELT
+	slot_flags = SLOT_FLAG_BELT
 	resistance_flags = FLAMMABLE
 	max_integrity = 40
 	var/active = FALSE
@@ -26,7 +26,7 @@
 		to_chat(user, "<span class='warning'>Huh? How does this thing work?</span>")
 		active = TRUE
 		icon_state = initial(icon_state) + "_active"
-		playsound(loc, 'sound/weapons/armbomb.ogg', 75, 1, -3)
+		playsound(loc, 'sound/weapons/armbomb.ogg', 75, TRUE, -3)
 		spawn(5)
 			if(user)
 				user.drop_item()
@@ -42,7 +42,7 @@
 		to_chat(user, "<span class='warning'>You prime the [name]! [det_time/10] seconds!</span>")
 		active = TRUE
 		icon_state = initial(icon_state) + "_active"
-		playsound(loc, 'sound/weapons/armbomb.ogg', 75, 1, -3)
+		playsound(loc, 'sound/weapons/armbomb.ogg', 75, TRUE, -3)
 		spawn(det_time)
 			prime()
 			return
@@ -59,7 +59,7 @@
 		if(det_time > 1)
 			. += "The timer is set to [det_time/10] second\s."
 		else
-			. += "\The [src] is set for instant detonation."
+			. += "[src] is set for instant detonation."
 
 /obj/item/grenade/attack_self(mob/user as mob)
 	if(!active)
@@ -70,7 +70,7 @@
 			add_fingerprint(user)
 			var/turf/bombturf = get_turf(src)
 			var/area/A = get_area(bombturf)
-			message_admins("[key_name_admin(usr)] has primed a [name] for detonation at <A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=[bombturf.x];Y=[bombturf.y];Z=[bombturf.z]'>[A.name] (JMP)</a>")
+			message_admins("[key_name_admin(usr)] has primed a [name] for detonation at <A href='byond://?_src_=holder;adminplayerobservecoodjump=1;X=[bombturf.x];Y=[bombturf.y];Z=[bombturf.z]'>[A.name] (JMP)</a>")
 			log_game("[key_name(usr)] has primed a [name] for detonation at [A.name] ([bombturf.x],[bombturf.y],[bombturf.z])")
 			investigate_log("[key_name(usr)] has primed a [name] for detonation at [A.name] ([bombturf.x],[bombturf.y],[bombturf.z])", INVESTIGATE_BOMB)
 			add_attack_logs(user, src, "has primed for detonation", ATKLOG_FEW)
@@ -80,33 +80,54 @@
 			spawn(det_time)
 				prime()
 
-
 /obj/item/grenade/proc/prime()
+	return
 
 /obj/item/grenade/proc/update_mob()
 	if(ismob(loc))
 		var/mob/M = loc
 		M.unEquip(src)
 
-
-/obj/item/grenade/attackby(obj/item/W as obj, mob/user as mob, params)
-	if(istype(W, /obj/item/screwdriver))
-		switch(det_time)
-			if("1")
-				det_time = 10
-				to_chat(user, "<span class='notice'>You set [src] for 1 second detonation time.</span>")
-			if("10")
-				det_time = 30
-				to_chat(user, "<span class='notice'>You set [src] for 3 second detonation time.</span>")
-			if("30")
-				det_time = 50
-				to_chat(user, "<span class='notice'>You set [src] for 5 second detonation time.</span>")
-			if("50")
-				det_time = 1
-				to_chat(user, "<span class='notice'>You set [src] for instant detonation.</span>")
-		add_fingerprint(user)
-	..()
+/obj/item/grenade/screwdriver_act(mob/living/user, obj/item/I)
+	switch(det_time)
+		if(1)
+			det_time = 10
+			to_chat(user, "<span class='notice'>You set [src] for 1 second detonation time.</span>")
+		if(10)
+			det_time = 30
+			to_chat(user, "<span class='notice'>You set [src] for 3 second detonation time.</span>")
+		if(30)
+			det_time = 50
+			to_chat(user, "<span class='notice'>You set [src] for 5 second detonation time.</span>")
+		if(50)
+			det_time = 1
+			to_chat(user, "<span class='notice'>You set [src] for instant detonation.</span>")
+	add_fingerprint(user)
+	return TRUE
 
 /obj/item/grenade/attack_hand()
+	///We need to clear the walk_to on grabbing a moving grenade to have it not leap straight out of your hand
 	walk(src, null, null)
 	..()
+
+/obj/item/grenade/Destroy()
+	///We need to clear the walk_to on destroy to allow a grenade which uses walk_to or related to properly GC
+	walk_to(src, 0)
+	return ..()
+
+/obj/item/grenade/cmag_act(mob/user)
+	if(HAS_TRAIT(src, TRAIT_CMAGGED))
+		return
+	ADD_TRAIT(src, TRAIT_CMAGGED, "cmagged grenade")
+	to_chat(user, "<span class='warning'>You drip some yellow ooze into [src]. [src] suddenly doesn't want to leave you...</span>")
+	AddComponent(/datum/component/boomerang, throw_range, TRUE)
+
+/obj/item/grenade/uncmag()
+	if(!HAS_TRAIT(src, TRAIT_CMAGGED))
+		return
+	REMOVE_TRAIT(src, TRAIT_CMAGGED, "cmagged grenade")
+	var/datum/component/bomberang = GetComponent(/datum/component/boomerang)
+	if(!bomberang)
+		return
+	bomberang.RemoveComponent()
+	qdel(bomberang)

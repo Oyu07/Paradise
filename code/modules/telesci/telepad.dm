@@ -5,9 +5,8 @@
 	icon = 'icons/obj/telescience.dmi'
 	icon_state = "pad-idle"
 	anchored = TRUE
-	use_power = IDLE_POWER_USE
-	idle_power_usage = 200
-	active_power_usage = 5000
+	idle_power_consumption = 200
+	active_power_consumption = 5000
 	var/efficiency
 
 /obj/machinery/telepad/Initialize(mapload)
@@ -67,9 +66,8 @@
 	icon = 'icons/obj/telescience.dmi'
 	icon_state = "pad-idle"
 	anchored = TRUE
-	use_power = IDLE_POWER_USE
-	idle_power_usage = 20
-	active_power_usage = 500
+	idle_power_consumption = 20
+	active_power_consumption = 500
 	var/stage = 0
 
 /obj/machinery/telepad_cargo/crowbar_act(mob/living/user, obj/item/I)
@@ -110,6 +108,6 @@
 	if(user)
 		to_chat(user, "<span class = 'caution'> Locked In</span>")
 		new /obj/machinery/telepad_cargo(user.loc)
-		playsound(src, 'sound/effects/pop.ogg', 100, 1, 1)
+		playsound(src, 'sound/effects/pop.ogg', 100, TRUE, 1)
 		qdel(src)
 	return

@@ -168,7 +168,7 @@
 		holder.remove_reagent("epinephrine", 2)
 	if(iscarbon(M))
 		var/mob/living/carbon/C = M
-		C.adjustPlasma(10)
+		C.add_plasma(10)
 	return ..() | update_flags
 
 /datum/reagent/plasma/reaction_mob(mob/living/M, method = REAGENT_TOUCH, volume)//Splashing people with plasma is stronger than fuel!
@@ -209,7 +209,6 @@
 		if(!S.reagents)
 			S.create_reagents(volume)
 		S.reagents.add_reagent("thermite", volume)
-		S.thermite = TRUE
 		if(S.active_hotspot)
 			S.reagents.temperature_reagents(S.active_hotspot.temperature, 10, 300)
 
@@ -252,9 +251,8 @@
 	fireflash_sm(T, radius, 4500 + volume * 500, 350)
 
 /datum/reagent/clf3/reaction_mob(mob/living/M, method = REAGENT_TOUCH, volume)
-	if(method == REAGENT_TOUCH || method == REAGENT_INGEST)
-		M.adjust_fire_stacks(10)
-		M.IgniteMob()
+	M.adjust_fire_stacks(10)
+	M.IgniteMob()
 	if(method == REAGENT_INGEST)
 		M.adjustFireLoss(min(max(15, volume * 2.5), 90))
 		to_chat(M, "<span class='warning'>It burns!</span>")
@@ -426,15 +424,8 @@
 /datum/reagent/firefighting_foam/reaction_turf(turf/simulated/T, volume)
 	if(!istype(T))
 		return
-	var/CT = cooling_temperature
 	new /obj/effect/decal/cleanable/flour/foam(T) //foam mess; clears up quickly.
-	var/hotspot = (locate(/obj/effect/hotspot) in T)
-	if(hotspot)
-		var/datum/gas_mixture/lowertemp = T.remove_air(T.air.total_moles())
-		lowertemp.temperature = max(min(lowertemp.temperature-(CT*1000), lowertemp.temperature / CT), 0)
-		lowertemp.react()
-		T.assume_air(lowertemp)
-		qdel(hotspot)
+	T.quench(1000, cooling_temperature)
 
 /datum/reagent/plasma_dust
 	name = "Plasma Dust"
@@ -457,7 +448,7 @@
 	update_flags |= M.adjustToxLoss(3, FALSE)
 	if(iscarbon(M))
 		var/mob/living/carbon/C = M
-		C.adjustPlasma(20)
+		C.add_plasma(20)
 	return ..() | update_flags
 
 /datum/reagent/plasma_dust/reaction_mob(mob/living/M, method=REAGENT_TOUCH, volume)//Splashing people with plasma dust is stronger than fuel!
@@ -465,3 +456,14 @@
 		M.adjust_fire_stacks(volume / 5)
 		return
 	..()
+
+/datum/reagent/confetti
+	name = "Confetti"
+	id = "confetti"
+	description = "Pure, liquid confetti. Explodes into a colorful bomb when exposed to heat."
+	color = "#500064" // rgb: 80, 0, 100
+	taste_description = "the tears of janitors"
+
+/datum/reagent/confetti/reaction_turf(turf/T, volume)
+	var/confetti = /obj/effect/decal/cleanable/confetti
+	new confetti(T)

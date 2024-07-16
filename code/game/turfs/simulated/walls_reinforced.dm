@@ -15,6 +15,9 @@
 	sheet_amount = 1
 	girder_type = /obj/structure/girder/reinforced
 	can_dismantle_with_welder = FALSE
+	smoothing_groups = list(SMOOTH_GROUP_SIMULATED_TURFS, SMOOTH_GROUP_WALLS, SMOOTH_GROUP_REINFORCED_WALLS)
+	canSmoothWith = list(SMOOTH_GROUP_WALLS, SMOOTH_GROUP_REGULAR_WALLS, SMOOTH_GROUP_REINFORCED_WALLS)
+	heat_resistance = 20000 // Ain't getting through this soon
 
 	var/d_state = RWALL_INTACT
 	var/can_be_reinforced = 1
@@ -51,15 +54,7 @@
 			d_state = RWALL_SHEATH
 			update_icon()
 		return
-	else if(d_state == RWALL_SUPPORT_LINES && istype(I, /obj/item/stack/rods))
-		var/obj/item/stack/S = I
-		if(S.use(1))
-			d_state = RWALL_INTACT
-			update_icon()
-			to_chat(user, "<span class='notice'>You replace the outer grille.</span>")
-		else
-			to_chat(user, "<span class='warning'>You don't have enough rods for that!</span>")
-		return
+
 	else if(d_state)
 		// Repairing
 		if(istype(I, /obj/item/stack/sheet/metal))
@@ -78,7 +73,7 @@
 		return ..()
 
 /turf/simulated/wall/r_wall/welder_act(mob/user, obj/item/I)
-	if(thermite && I.use_tool(src, user, volume = I.tool_volume))
+	if(reagents?.get_reagent_amount("thermite") && I.use_tool(src, user, volume = I.tool_volume))
 		thermitemelt(user)
 		return TRUE
 	if(!(d_state in list(RWALL_COVER, RWALL_SUPPORT_RODS, RWALL_CUT_COVER)))
@@ -153,15 +148,18 @@
 	update_icon()
 
 /turf/simulated/wall/r_wall/wirecutter_act(mob/user, obj/item/I)
-	if(d_state != RWALL_INTACT)
+	if(d_state != RWALL_INTACT && d_state != RWALL_SUPPORT_LINES)
 		return
 	. = TRUE
 	if(!I.use_tool(src, user, 0, volume = I.tool_volume))
 		return
-	d_state = RWALL_SUPPORT_LINES
+	if(d_state == RWALL_INTACT)
+		d_state = RWALL_SUPPORT_LINES
+		to_chat(user, "<span class='notice'>You cut the outer grille.</span>")
+	else
+		d_state = RWALL_INTACT
+		to_chat(user, "<span class='notice'>You mend the outer grille.</span>")
 	update_icon()
-	new /obj/item/stack/rods(src)
-	to_chat(user, "<span class='notice'>You cut the outer grille.</span>")
 
 /turf/simulated/wall/r_wall/wrench_act(mob/user, obj/item/I)
 	if(d_state != RWALL_BOLTS && d_state != RWALL_SUPPORT_RODS)
@@ -204,6 +202,19 @@
 			dismantle_wall()
 		return TRUE
 
+	if(istype(I, /obj/item/pyro_claws))
+		to_chat(user, "<span class='notice'>You begin to melt the wall...</span>")
+		if(do_after(user, 50 * I.toolspeed, target = src)) // claws has 0.5 toolspeed, so 2.5 seconds
+			to_chat(user, "<span class='notice'>Your [I] melt the reinforced plating.</span>")
+			dismantle_wall()
+		return TRUE
+
+	if(istype(I, /obj/item/zombie_claw))
+		to_chat(user, "<span class='notice'>You begin to claw apart the wall.</span>")
+		if(do_after(user, 2 MINUTES * I.toolspeed, target = src))
+			to_chat(user, "<span class='notice'>Your [I.name] rip apart the reinforced plating.</span>")
+			dismantle_wall()
+		return TRUE
 
 /turf/simulated/wall/r_wall/wall_singularity_pull(current_size)
 	if(current_size >= STAGE_FIVE)

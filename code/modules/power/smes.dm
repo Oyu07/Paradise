@@ -12,7 +12,6 @@
 	desc = "A high-capacity superconducting magnetic energy storage (SMES) unit."
 	icon_state = "smes"
 	density = TRUE
-	use_power = NO_POWER_USE
 
 	var/capacity = 5e6 // maximum charge
 	var/charge = 0 // actual charge
@@ -44,6 +43,9 @@
 	component_parts += new /obj/item/stock_parts/capacitor(null)
 	component_parts += new /obj/item/stack/cable_coil(null, 5)
 	RefreshParts()
+
+	// When (re)built, try to connect to the powernet under us.
+	connect_to_network()
 
 	dir_loop:
 		for(var/d in GLOB.cardinal)
@@ -157,8 +159,8 @@
 				tempDir = EAST
 			if(NORTHWEST, SOUTHWEST)
 				tempDir = WEST
-		var/turf/tempLoc = get_step(src, reverse_direction(tempDir))
-		if(istype(tempLoc, /turf/space))
+		var/turf/tempLoc = get_step(src, REVERSE_DIR(tempDir))
+		if(isspaceturf(tempLoc))
 			to_chat(user, "<span class='warning'>You can't build a terminal on space.</span>")
 			return
 		else if(istype(tempLoc))
@@ -234,7 +236,7 @@
 	if(SSticker && SSticker.current_state == GAME_STATE_PLAYING)
 		var/area/area = get_area(src)
 		if(area)
-			message_admins("SMES deleted at (<A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>[area.name]</a>)")
+			message_admins("SMES deleted at (<A href='byond://?_src_=holder;adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>[area.name]</a>)")
 			log_game("SMES deleted at ([area.name])")
 			investigate_log("<font color='red'>deleted</font> at ([area.name])","singulo")
 	if(terminal)
@@ -242,7 +244,7 @@
 	return ..()
 
 /obj/machinery/power/smes/proc/chargedisplay()
-	return clamp(round(5.5 * charge / capacity), 0, 5)
+	return clamp(round(ceil(charge * 5 / capacity)), 0, 5)
 
 /obj/machinery/power/smes/process()
 	if(stat & BROKEN)
@@ -255,7 +257,7 @@
 
 	//inputting
 	if(terminal && input_attempt)
-		input_available = terminal.surplus()
+		input_available = terminal.get_power_balance()
 
 		if(inputting)
 			if(input_available > 0)		// if there's power available, try to charge
@@ -264,7 +266,7 @@
 
 				charge += load * SMESRATE	// increase the charge
 
-				terminal.add_load(load) // add the load to the terminal side network
+				terminal.consume_direct_power(load) // add the load to the terminal side network
 
 			else					// if not enough capcity
 				inputting = FALSE		// stop inputting
@@ -276,11 +278,10 @@
 		inputting = FALSE
 
 	//outputting
-	if(output_attempt)
+	if(output_attempt && powernet)
 		if(outputting)
 			output_used = min( charge/SMESRATE, output_level)		//limit output to that stored
-
-			if (add_avail(output_used))				// add output to powernet if it exists (smes side)
+			if(produce_direct_power(output_used))				// add output to powernet if it exists (smes side)
 				charge -= output_used*SMESRATE		// reduce the storage (may be recovered in /restore() if excessive)
 			else
 				outputting = FALSE
@@ -311,7 +312,7 @@
 		output_used = 0
 		return
 
-	var/excess = powernet.netexcess		// this was how much wasn't used on the network last ptick, minus any removed by other SMESes
+	var/excess = powernet.excess_power		// this was how much wasn't used on the network last ptick, minus any removed by other SMESes
 
 	excess = min(output_used, excess)				// clamp it to how much was actually output by this SMES last ptick
 
@@ -322,11 +323,11 @@
 	var/clev = chargedisplay()
 
 	charge += excess * SMESRATE			// restore unused power
-	powernet.netexcess -= excess		// remove the excess from the powernet, so later SMESes don't try to use it
+	powernet.excess_power -= excess		// remove the excess from the powernet, so later SMESes don't try to use it
 
 	output_used -= excess
 
-	if(clev != chargedisplay() ) //if needed updates the icons overlay
+	if(clev != chargedisplay()) //if needed updates the icons overlay
 		update_icon()
 	return
 
@@ -341,12 +342,15 @@
 	add_fingerprint(user)
 	ui_interact(user)
 
-/obj/machinery/power/smes/ui_interact(mob/user, ui_key = "main", datum/tgui/ui = null, force_open = TRUE, datum/tgui/master_ui = null, datum/ui_state/state = GLOB.default_state)
+/obj/machinery/power/smes/ui_state(mob/user)
+	return GLOB.default_state
+
+/obj/machinery/power/smes/ui_interact(mob/user, datum/tgui/ui = null)
 	if(stat & BROKEN)
 		return
-	ui = SStgui.try_update_ui(user, src, ui_key, ui, force_open)
+	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
-		ui = new(user, src, ui_key, "Smes",  name, 340, 350, master_ui, state)
+		ui = new(user, src, "Smes",  name)
 		ui.open()
 
 /obj/machinery/power/smes/ui_data(mob/user)
@@ -360,6 +364,7 @@
 		"inputLevel_text" = DisplayPower(input_level),
 		"inputLevelMax" = input_level_max,
 		"inputAvailable" = input_available,
+		"outputPowernet" = !isnull(powernet),
 		"outputAttempt" = output_attempt,
 		"outputting" = outputting,
 		"outputLevel" = output_level,
@@ -425,7 +430,7 @@
 				M.show_message("<span class='warning'>[src] is making strange noises!</span>", 3, "<span class='warning'>You hear sizzling electronics.</span>", 2)
 			sleep(10*pick(4,5,6,7,10,14))
 			var/datum/effect_system/smoke_spread/smoke = new
-			smoke.set_up(3, 0, src.loc)
+			smoke.set_up(3, FALSE, loc)
 			smoke.attach(src)
 			smoke.start()
 			explosion(src.loc, -1, 0, 1, 3, 1, 0)
@@ -439,7 +444,7 @@
 				emp_act(2)
 		if(prob(5)) //smoke only
 			var/datum/effect_system/smoke_spread/smoke = new
-			smoke.set_up(3, 0, src.loc)
+			smoke.set_up(3, FALSE, loc)
 			smoke.attach(src)
 			smoke.start()
 
@@ -481,3 +486,6 @@
 	..()
 
 #undef SMESRATE
+
+#undef SMESMAXCHARGELEVEL
+#undef SMESMAXOUTPUT

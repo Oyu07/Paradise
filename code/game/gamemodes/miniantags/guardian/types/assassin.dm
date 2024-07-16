@@ -1,28 +1,35 @@
 /mob/living/simple_animal/hostile/guardian/assassin
-	melee_damage_lower = 15
-	melee_damage_upper = 15
-	armour_penetration_percentage = 0
-	playstyle_string = "As an <b>Assassin</b> type you do medium damage and have no damage resistance, but can enter stealth, massively increasing the damage of your next attack and causing it to ignore armor. Stealth is broken when you attack or take damage."
+	melee_damage_lower = 25
+	melee_damage_upper = 25
+	damage_transfer = 0.6
+	playstyle_string = "As an <b>Assassin</b> type you do medium damage and have moderate damage resistance, but can enter stealth, massively increasing the damage of your next attack and causing it to ignore armor. Stealth is broken when you attack or take damage."
 	magic_fluff_string = "..And draw the Space Ninja, a lethal, invisible assassin."
 	tech_fluff_string = "Boot sequence complete. Assassin modules loaded. Holoparasite swarm online."
 	bio_fluff_string = "Your scarab swarm finishes mutating and stirs to life, capable of sneaking and stealthy attacks."
+	stealthy_deploying = TRUE
+	attacktext = "slashes"
+	attack_sound = 'sound/weapons/bladeslice.ogg'
 	var/toggle = FALSE
 	var/stealthcooldown = 0
-	var/default_stealth_cooldown = 16 SECONDS
-	var/obj/screen/alert/canstealthalert
-	var/obj/screen/alert/instealthalert
+	var/default_stealth_cooldown = 10 SECONDS
+	var/atom/movable/screen/alert/canstealthalert
+	var/atom/movable/screen/alert/instealthalert
+
+/mob/living/simple_animal/hostile/guardian/assassin/Initialize(mapload, mob/living/host)
+	. = ..()
+	remove_from_all_data_huds()
+	if(loc == summoner && toggle)
+		ToggleMode(0)
 
 /mob/living/simple_animal/hostile/guardian/assassin/Life(seconds, times_fired)
 	. = ..()
 	updatestealthalert()
-	if(loc == summoner && toggle)
-		ToggleMode(0)
 
-/mob/living/simple_animal/hostile/guardian/assassin/Stat()
-	..()
-	if(statpanel("Status"))
-		if(stealthcooldown >= world.time)
-			stat(null, "Stealth Cooldown Remaining: [max(round((stealthcooldown - world.time)*0.1, 0.1), 0)] seconds")
+/mob/living/simple_animal/hostile/guardian/assassin/get_status_tab_items()
+	var/list/status_tab_data = ..()
+	. = status_tab_data
+	if(stealthcooldown >= world.time)
+		status_tab_data[++status_tab_data.len] = list("Stealth Cooldown Remaining:", "[max(round((stealthcooldown - world.time) * 0.1, 0.1), 0)] seconds")
 
 /mob/living/simple_animal/hostile/guardian/assassin/AttackingTarget()
 	. = ..()
@@ -30,15 +37,19 @@
 		if(toggle && (isliving(target) || istype(target, /obj/structure/window) || istype(target, /obj/structure/grille)))
 			ToggleMode(1)
 
+/mob/living/simple_animal/hostile/guardian/assassin/do_attack_animation(atom/A, visual_effect_icon, obj/item/used_item, no_effect)
+	if(!no_effect && !visual_effect_icon)
+		visual_effect_icon = ATTACK_EFFECT_CLAW
+	return ..()
+
 /mob/living/simple_animal/hostile/guardian/assassin/adjustHealth(amount, updating_health = TRUE)
 	. = ..()
 	if(. > 0 && toggle)
 		ToggleMode(1)
 
-/mob/living/simple_animal/hostile/guardian/assassin/Recall()
-	..()
-	if(toggle)
-		ToggleMode(0)
+/mob/living/simple_animal/hostile/guardian/assassin/Manifest()
+	. = ..()
+	ToggleMode(FALSE)
 
 /mob/living/simple_animal/hostile/guardian/assassin/ToggleMode(forced = 0)
 	if(toggle)
@@ -58,17 +69,16 @@
 		toggle = FALSE
 	else if(stealthcooldown <= world.time)
 		if(loc == summoner)
-			to_chat(src, "<span class='danger'>You have to be manifested to enter stealth!</span>")
+			to_chat(src, "<span class='notice'>You automatically deploy stealthed!</span>")
 			return
 		melee_damage_lower = 50
 		melee_damage_upper = 50
 		armour_penetration_percentage = 100
 		obj_damage = 0
 		environment_smash = ENVIRONMENT_SMASH_NONE
-		new /obj/effect/temp_visual/guardian/phase/out(get_turf(src))
-		alpha = 15
+		alpha = 10
 		if(!forced)
-			to_chat(src, "<span class='danger'>You enter stealth, empowering your next attack.</span>")
+			to_chat(src, "<span class='danger'>You enter stealth, becoming mostly invisible, empowering your next attack.</span>")
 		updatestealthalert()
 		toggle = TRUE
 	else if(!forced)
@@ -78,12 +88,12 @@
 	if(stealthcooldown <= world.time)
 		if(toggle)
 			if(!instealthalert)
-				instealthalert = throw_alert("instealth", /obj/screen/alert/instealth)
+				instealthalert = throw_alert("instealth", /atom/movable/screen/alert/instealth)
 				clear_alert("canstealth")
 				canstealthalert = null
 		else
 			if(!canstealthalert)
-				canstealthalert = throw_alert("canstealth", /obj/screen/alert/canstealth)
+				canstealthalert = throw_alert("canstealth", /atom/movable/screen/alert/canstealth)
 				clear_alert("instealth")
 				instealthalert = null
 	else

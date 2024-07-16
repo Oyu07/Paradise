@@ -40,8 +40,8 @@
 /obj/effect/mapping_helpers/airlock/access/any/command/eva
 	access = ACCESS_EVA
 
-/obj/effect/mapping_helpers/airlock/access/any/command/gateway
-	access = ACCESS_GATEWAY
+/obj/effect/mapping_helpers/airlock/access/any/supply/expedition
+	access = ACCESS_EXPEDITION
 
 /obj/effect/mapping_helpers/airlock/access/any/command/hop
 	access = ACCESS_HOP
@@ -64,6 +64,9 @@
 
 /obj/effect/mapping_helpers/airlock/access/any/engineering/general
 	access = ACCESS_ENGINE
+
+/obj/effect/mapping_helpers/airlock/access/any/engineering/equipment
+	access = ACCESS_ENGINE_EQUIP
 
 /obj/effect/mapping_helpers/airlock/access/any/engineering/construction
 	access = ACCESS_CONSTRUCTION
@@ -130,9 +133,6 @@
 /obj/effect/mapping_helpers/airlock/access/any/science/tox_storage
 	access = ACCESS_TOX_STORAGE
 
-/obj/effect/mapping_helpers/airlock/access/any/science/genetics
-	access = ACCESS_GENETICS
-
 /obj/effect/mapping_helpers/airlock/access/any/science/robotics
 	access = ACCESS_ROBOTICS
 
@@ -152,6 +152,9 @@
 /obj/effect/mapping_helpers/airlock/access/any/security/general
 	access = ACCESS_SECURITY
 
+/obj/effect/mapping_helpers/airlock/access/any/security/forensics
+	access = ACCESS_FORENSICS_LOCKERS
+
 /obj/effect/mapping_helpers/airlock/access/any/security/doors
 	access = ACCESS_SEC_DOORS
 
@@ -168,7 +171,7 @@
 	access = ACCESS_HOS
 
 /obj/effect/mapping_helpers/airlock/access/any/security/iaa
-	access = ACCESS_LAWYER
+	access = ACCESS_INTERNAL_AFFAIRS
 
 // -------------------- Service access helpers
 /obj/effect/mapping_helpers/airlock/access/any/service
@@ -195,7 +198,7 @@
 /obj/effect/mapping_helpers/airlock/access/any/service/library
 	access = ACCESS_LIBRARY
 
-/obj/effect/mapping_helpers/airlock/access/any/service/library
+/obj/effect/mapping_helpers/airlock/access/any/service/theatre
 	access = ACCESS_THEATRE
 
 /obj/effect/mapping_helpers/airlock/access/any/service/clown
@@ -209,7 +212,14 @@
 	icon_state = "access_helper_sup"
 
 /obj/effect/mapping_helpers/airlock/access/any/supply/general
+	name = "cargo office"
 	access = ACCESS_CARGO
+
+/obj/effect/mapping_helpers/airlock/access/any/supply/cargo_bay
+	access = ACCESS_CARGO_BAY
+
+/obj/effect/mapping_helpers/airlock/access/any/supply/supply_shuttle
+	access = ACCESS_SUPPLY_SHUTTLE
 
 /obj/effect/mapping_helpers/airlock/access/any/supply/mail_sorting
 	access = ACCESS_MAILSORTING
@@ -249,8 +259,8 @@
 /obj/effect/mapping_helpers/airlock/access/all/command/eva
 	access = ACCESS_EVA
 
-/obj/effect/mapping_helpers/airlock/access/all/command/gateway
-	access = ACCESS_GATEWAY
+/obj/effect/mapping_helpers/airlock/access/all/supply/expedition
+	access = ACCESS_EXPEDITION
 
 /obj/effect/mapping_helpers/airlock/access/all/command/hop
 	access = ACCESS_HOP
@@ -273,6 +283,9 @@
 
 /obj/effect/mapping_helpers/airlock/access/all/engineering/general
 	access = ACCESS_ENGINE
+
+/obj/effect/mapping_helpers/airlock/access/all/engineering/equipment
+	access = ACCESS_ENGINE_EQUIP
 
 /obj/effect/mapping_helpers/airlock/access/all/engineering/construction
 	access = ACCESS_CONSTRUCTION
@@ -339,9 +352,6 @@
 /obj/effect/mapping_helpers/airlock/access/all/science/tox_storage
 	access = ACCESS_TOX_STORAGE
 
-/obj/effect/mapping_helpers/airlock/access/all/science/genetics
-	access = ACCESS_GENETICS
-
 /obj/effect/mapping_helpers/airlock/access/all/science/robotics
 	access = ACCESS_ROBOTICS
 
@@ -361,6 +371,9 @@
 /obj/effect/mapping_helpers/airlock/access/all/security/general
 	access = ACCESS_SECURITY
 
+/obj/effect/mapping_helpers/airlock/access/all/security/forensics
+	access = ACCESS_FORENSICS_LOCKERS
+
 /obj/effect/mapping_helpers/airlock/access/all/security/doors
 	access = ACCESS_SEC_DOORS
 
@@ -377,7 +390,7 @@
 	access = ACCESS_HOS
 
 /obj/effect/mapping_helpers/airlock/access/all/security/iaa
-	access = ACCESS_LAWYER
+	access = ACCESS_INTERNAL_AFFAIRS
 
 // -------------------- Service access helpers
 /obj/effect/mapping_helpers/airlock/access/all/service
@@ -398,8 +411,6 @@
 /obj/effect/mapping_helpers/airlock/access/all/service/chapel_office
 	access = ACCESS_CHAPEL_OFFICE
 
-/obj/effect/mapping_helpers/airlock/access/all/service/crematorium
-	access = ACCESS_CREMATORIUM
 
 /obj/effect/mapping_helpers/airlock/access/all/service/crematorium
 	access = ACCESS_CREMATORIUM
@@ -407,7 +418,7 @@
 /obj/effect/mapping_helpers/airlock/access/all/service/library
 	access = ACCESS_LIBRARY
 
-/obj/effect/mapping_helpers/airlock/access/all/service/library
+/obj/effect/mapping_helpers/airlock/access/all/service/theatre
 	access = ACCESS_THEATRE
 
 /obj/effect/mapping_helpers/airlock/access/all/service/clown
@@ -421,7 +432,14 @@
 	icon_state = "access_helper_sup"
 
 /obj/effect/mapping_helpers/airlock/access/all/supply/general
+	name = "cargo office"
 	access = ACCESS_CARGO
+
+/obj/effect/mapping_helpers/airlock/access/all/supply/cargo_bay
+	access = ACCESS_CARGO_BAY
+
+/obj/effect/mapping_helpers/airlock/access/all/supply/supply_shuttle
+	access = ACCESS_SUPPLY_SHUTTLE
 
 /obj/effect/mapping_helpers/airlock/access/all/supply/mail_sorting
 	access = ACCESS_MAILSORTING

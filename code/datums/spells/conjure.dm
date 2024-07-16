@@ -1,4 +1,4 @@
-/obj/effect/proc_holder/spell/aoe_turf/conjure
+/datum/spell/aoe/conjure
 	desc = "This spell conjures objs of the specified types in range."
 
 	var/list/summon_type = list() //determines what exactly will be summoned
@@ -15,16 +15,22 @@
 
 	var/cast_sound = 'sound/items/welder.ogg'
 
-/obj/effect/proc_holder/spell/aoe_turf/conjure/cast(list/targets,mob/living/user = usr)
-	playsound(get_turf(user), cast_sound, 50,1)
+/datum/spell/aoe/conjure/create_new_targeting()
+	var/datum/spell_targeting/aoe/turf/targeting = new()
+	targeting.range = aoe_range
+	return targeting
+
+/datum/spell/aoe/conjure/cast(list/targets,mob/living/user = usr)
+	var/list/what_conjure_summoned = list()
+	playsound(get_turf(user), cast_sound, 50, TRUE)
 	for(var/turf/T in targets)
 		if(T.density && !summon_ignore_density)
 			targets -= T
 	playsound(get_turf(src), cast_sound, 50, 1)
 
-	if(do_after(user, delay, target = user))
+	if(delay <= 0 || do_after(user, delay, target = user))
 		for(var/i=0,i<summon_amt,i++)
-			if(!targets.len)
+			if(!length(targets))
 				break
 			var/summoned_object_type = pick(summon_type)
 			var/spawn_place = pick(targets)
@@ -36,6 +42,7 @@
 				O.ChangeTurf(N)
 			else
 				var/atom/summoned_object = new summoned_object_type(spawn_place)
+				what_conjure_summoned += summoned_object
 
 				for(var/varName in newVars)
 					if(varName in summoned_object.vars)
@@ -48,17 +55,12 @@
 		cooldown_handler.start_recharge(0.5 SECONDS)
 
 
-	return
+	return what_conjure_summoned
 
-/obj/effect/proc_holder/spell/aoe_turf/conjure/summonEdSwarm //test purposes
+/datum/spell/aoe/conjure/summonEdSwarm
 	name = "Dispense Wizard Justice"
 	desc = "This spell dispenses wizard justice."
-
 	summon_type = list(/mob/living/simple_animal/bot/ed209)
 	summon_amt = 10
 	newVars = list("emagged" = 1,"name" = "Wizard's Justicebot")
-
-/obj/effect/proc_holder/spell/aoe_turf/conjure/summonEdSwarm/create_new_targeting()
-	var/datum/spell_targeting/aoe/turf/T = new()
-	T.range = 3
-	return T
+	aoe_range = 3

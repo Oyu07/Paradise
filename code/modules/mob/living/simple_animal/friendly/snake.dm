@@ -8,7 +8,6 @@
 		var/mob/living/L = target
 		if(L.reagents && !poison_per_bite == 0)
 			L.reagents.add_reagent(poison_type, poison_per_bite)
-		return .
 
 /mob/living/simple_animal/hostile/retaliate/poison/snake
 	name = "snake"
@@ -25,7 +24,7 @@
 	response_help  = "pets"
 	response_disarm = "shoos"
 	response_harm   = "steps on"
-	faction = list("hostile")
+	faction = list("hostile", "jungle")
 	ventcrawler = VENTCRAWLER_ALWAYS
 	density = FALSE
 	pass_flags = PASSTABLE | PASSMOB
@@ -42,7 +41,7 @@
 	var/list/mice = list()
 	for(var/HM in .)
 		//Yum a tasty mouse
-		if(istype(HM, /mob/living/simple_animal/mouse))
+		if(ismouse(HM))
 			mice += HM
 		if(isliving(HM))
 			living_mobs += HM
@@ -54,7 +53,7 @@
 	return mice
 
 /mob/living/simple_animal/hostile/retaliate/poison/snake/AttackingTarget()
-	if(istype(target, /mob/living/simple_animal/mouse))
+	if(ismouse(target))
 		visible_message("<span class='notice'>[name] consumes [target] in a single gulp!</span>", "<span class='notice'>You consume [target] in a single gulp!</span>")
 		QDEL_NULL(target)
 		adjustHealth(-2)

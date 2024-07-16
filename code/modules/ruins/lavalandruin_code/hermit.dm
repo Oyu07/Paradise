@@ -1,5 +1,5 @@
 //Malfunctioning cryostasis sleepers: Spawns in makeshift shelters in lavaland. Ghosts become hermits with knowledge of how they got to where they are now.
-/obj/effect/mob_spawn/human/hermit
+/obj/effect/mob_spawn/human/alive/hermit
 	name = "malfunctioning cryostasis sleeper"
 	desc = "A humming sleeper with a silhouetted occupant inside. Its stasis function is broken and it's likely being used as a bed."
 	mob_name = "a stranded hermit"
@@ -16,7 +16,7 @@
 	the fresh air of Earth. These thoughts are dispelled by yet another recollection of how you got here... "
 	assignedrole = "Hermit"
 
-/obj/effect/mob_spawn/human/hermit/Initialize(mapload)
+/obj/effect/mob_spawn/human/alive/hermit/Initialize(mapload)
 	. = ..()
 	var/arrpee = rand(1,4)
 	switch(arrpee)
@@ -24,7 +24,7 @@
 			flavour_text += "you were a [pick("arms dealer", "shipwright", "docking manager")]'s assistant on a small trading station several sectors from here. Raiders attacked, and there was \
 			only one pod left when you got to the escape bay. You took it and launched it alone, and the crowd of terrified faces crowding at the airlock door as your pod's engines burst to \
 			life and sent you to this hell are forever branded into your memory."
-			outfit.uniform = /obj/item/clothing/under/assistantformal
+			outfit.uniform = /obj/item/clothing/under/misc/assistantformal
 			outfit.shoes = /obj/item/clothing/shoes/black
 			outfit.back = /obj/item/storage/backpack
 		if(2)
@@ -37,7 +37,7 @@
 		if(3)
 			flavour_text += "you were a doctor on one of Nanotrasen's space stations, but you left behind that damn corporation's tyranny and everything it stood for. From a metaphorical hell \
 			to a literal one, you find yourself nonetheless missing the recycled air and warm floors of what you left behind... but you'd still rather be here than there."
-			outfit.uniform = /obj/item/clothing/under/rank/medical
+			outfit.uniform = /obj/item/clothing/under/rank/medical/doctor
 			outfit.suit = /obj/item/clothing/suit/storage/labcoat
 			outfit.back = /obj/item/storage/backpack/medic
 			outfit.shoes = /obj/item/clothing/shoes/black
@@ -49,6 +49,6 @@
 			outfit.shoes = /obj/item/clothing/shoes/black
 			outfit.back = /obj/item/storage/backpack
 
-/obj/effect/mob_spawn/human/hermit/Destroy()
+/obj/effect/mob_spawn/human/alive/hermit/Destroy()
 	new/obj/structure/fluff/empty_cryostasis_sleeper(get_turf(src))
 	return ..()

@@ -4,9 +4,8 @@
 	icon = 'icons/obj/objects.dmi'
 	icon_state = "mass_driver"
 	anchored = TRUE
-	use_power = IDLE_POWER_USE
-	idle_power_usage = 2
-	active_power_usage = 50
+	idle_power_consumption = 2
+	active_power_consumption = 50
 
 	/// Throw power
 	var/power = 1
@@ -21,7 +20,7 @@
 		return
 
 	var/obj/machinery/mass_driver_frame/F = new (get_turf(src))
-	F.dir = src.dir
+	F.dir = dir
 	F.anchored = TRUE
 	F.build = 4
 	F.update_icon()
@@ -45,7 +44,7 @@
 	var/O_limit = 0
 	var/atom/target = get_edge_target_turf(src, dir)
 	for(var/atom/movable/O in loc)
-		if((!O.anchored && O.move_resist != INFINITY) || istype(O, /obj/mecha)) //Mechs need their launch platforms. Also checks if something is anchored or has move resist INFINITY, which should stop ghost flinging.
+		if((!O.anchored && O.move_resist != INFINITY) || ismecha(O)) //Mechs need their launch platforms. Also checks if something is anchored or has move resist INFINITY, which should stop ghost flinging.
 			O_limit++
 
 			if(O_limit >= 20)//so no more than 20 items are sent at a time, probably for counter-lag purposes
@@ -55,7 +54,7 @@
 			var/coef = 1
 			if(emagged)
 				coef = 5
-			INVOKE_ASYNC(O, /atom/movable.proc/throw_at, target, (drive_range * power * coef), (power * coef))
+			INVOKE_ASYNC(O, TYPE_PROC_REF(/atom/movable, throw_at), target, (drive_range * power * coef), (power * coef))
 
 	flick("mass_driver1", src)
 
@@ -143,26 +142,27 @@
 			return FALSE
 
 		if(4) // Grille in place
-			if(istype(W, /obj/item/crowbar))
+			if(W.tool_behaviour == TOOL_CROWBAR)
 				to_chat(user, "You begin to pry off the grille from \the [src]...")
 				playsound(get_turf(src), W.usesound, 50, 1)
 				if(do_after(user, 30 * W.toolspeed, target = src) && (build == 4))
 					new /obj/item/stack/rods(loc,2)
 					build--
 				return TRUE
-
-			if(istype(W, /obj/item/screwdriver))
-				to_chat(user, "You finalize the Mass Driver...")
-				playsound(get_turf(src), W.usesound, 50, 1)
-				var/obj/machinery/mass_driver/M = new(get_turf(src))
-				M.dir = src.dir
-				qdel(src)
-				return TRUE
-
 			return FALSE
 
-
 	return ..()
+
+/obj/machinery/mass_driver_frame/screwdriver_act(mob/living/user, obj/item/I)
+	if(build != 4)
+		return
+
+	to_chat(user, "<span class='notice'>You finalize the Mass Driver.</span>")
+	I.play_tool_sound(src)
+	var/obj/machinery/mass_driver/M = new(get_turf(src))
+	M.dir = dir
+	qdel(src)
+	return TRUE
 
 /obj/machinery/mass_driver_frame/welder_act(mob/user, obj/item/I)
 	if(build != 0 && build != 1 && build != 2)
@@ -192,12 +192,8 @@
 			WELDER_FLOOR_SLICE_SUCCESS_MESSAGE
 			build = 1
 
-/obj/machinery/mass_driver_frame/verb/rotate()
-	set category = "Object"
-	set name = "Rotate Frame"
-	set src in view(1)
-
-	if(usr.stat || usr.restrained()  || HAS_TRAIT(usr, TRAIT_FAKEDEATH))
+/obj/machinery/mass_driver_frame/AltClick(mob/user)
+	if(user.stat || HAS_TRAIT(user, TRAIT_HANDS_BLOCKED) || !Adjacent(user))
 		return
 
 	dir = turn(dir, -90)

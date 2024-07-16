@@ -9,7 +9,7 @@
 	can_buckle = TRUE
 	buckle_lying = FALSE
 	max_integrity = 300
-	armor = list(MELEE = 30, BULLET = 30, LASER = 30, ENERGY = 0, BOMB = 30, BIO = 0, RAD = 0, FIRE = 60, ACID = 60)
+	armor = list(MELEE = 30, BULLET = 30, LASER = 30, ENERGY = 0, BOMB = 30, RAD = 0, FIRE = 60, ACID = 60)
 	var/key_type
 	var/held_key_type //Similar to above, but the vehicle needs the key in hands as opposed to inserted into the ignition
 	var/obj/item/key/inserted_key
@@ -68,6 +68,11 @@
 			inserted_key = I
 		else
 			to_chat(user, "<span class='warning'>[I] seems to be stuck to your hand!</span>")
+		return
+	if(istype(I, /obj/item/borg/upgrade/vtec) && vehicle_move_delay > 1)
+		vehicle_move_delay = 1
+		qdel(I)
+		to_chat(user, "<span class='notice'>You upgrade [src] with [I].</span>")
 		return
 	return ..()
 
@@ -144,10 +149,11 @@
 	handle_vehicle_offsets()
 
 /obj/vehicle/bullet_act(obj/item/projectile/Proj)
-	if(has_buckled_mobs())
-		for(var/m in buckled_mobs)
-			var/mob/living/buckled_mob = m
-			buckled_mob.bullet_act(Proj)
+	if(!has_buckled_mobs())
+		return ..()
+	for(var/m in buckled_mobs)
+		var/mob/living/buckled_mob = m
+		buckled_mob.bullet_act(Proj)
 
 //MOVEMENT
 /obj/vehicle/relaymove(mob/user, direction)
@@ -179,7 +185,7 @@
 			if(issimulatedturf(loc))
 				var/turf/simulated/T = loc
 				if(T.wet == TURF_WET_LUBE)	//Lube! Fall off!
-					playsound(src, 'sound/misc/slip.ogg', 50, 1, -3)
+					playsound(src, 'sound/misc/slip.ogg', 50, TRUE, -3)
 					for(var/m in buckled_mobs)
 						var/mob/living/buckled_mob = m
 						buckled_mob.KnockDown(10 SECONDS)
@@ -233,3 +239,4 @@
 /obj/vehicle/zap_act(power, zap_flags)
 	zap_buckle_check(power)
 	return ..()
+

@@ -8,8 +8,7 @@
 	icon_state = "biogen-empty"
 	density = TRUE
 	anchored = TRUE
-	use_power = IDLE_POWER_USE
-	idle_power_usage = 40
+	idle_power_consumption = 40
 	/// Is the biogenerator curretly grinding up plants?
 	var/processing = FALSE
 	/// The container that is used to store reagents from certain products.
@@ -30,6 +29,13 @@
 	var/list/product_list = list()
 	/// The [/datum/design]'s categories which can be produced by this machine and can be uploaded via a disk.
 	var/static/list/categories = list("Food", "Botany Chemicals", "Organic Materials", "Leather and Cloth")
+	var/static/list/acceptable_items = typecacheof(list(
+		/obj/item/seeds,
+		/obj/item/unsorted_seeds,
+		/obj/item/food/snacks/grown,
+		/obj/item/grown,
+		/obj/item/food/snacks/grown/ash_flora,
+		/obj/item/food/snacks/honeycomb))
 
 /obj/machinery/biogenerator/Initialize(mapload)
 	. = ..()
@@ -45,7 +51,7 @@
 /obj/machinery/biogenerator/Destroy()
 	QDEL_NULL(container)
 	QDEL_NULL(files)
-	QDEL_LIST(stored_plants)
+	QDEL_LIST_CONTENTS(stored_plants)
 	return ..()
 
 /obj/machinery/biogenerator/ex_act(severity)
@@ -93,7 +99,7 @@
 		container = null
 	return TRUE
 
-/obj/machinery/crowbar_act(mob/living/user, obj/item/I)
+/obj/machinery/biogenerator/crowbar_act(mob/living/user, obj/item/I)
 	return default_deconstruction_crowbar(user, I)
 
 /obj/machinery/biogenerator/attackby(obj/item/O, mob/user, params)
@@ -128,11 +134,12 @@
 			return
 
 		var/obj/item/storage/bag/plants/PB = O
-		for(var/obj/item/reagent_containers/food/snacks/grown/G in PB.contents)
+		for(var/obj/item/P in PB.contents)
+			// No need to filter here, because plant bags should have the same list of acceptable items we do.
 			if(length(stored_plants) >= max_storable_plants)
 				break
-			PB.remove_from_storage(G, src)
-			stored_plants += G
+			PB.remove_from_storage(P, src)
+			stored_plants += P
 
 		if(length(stored_plants) < max_storable_plants)
 			to_chat(user, "<span class='info'>You empty [PB] into [src].</span>")
@@ -142,7 +149,7 @@
 		SStgui.update_uis(src)
 		return TRUE
 
-	else if(istype(O, /obj/item/reagent_containers/food/snacks/grown))
+	else if(is_type_in_typecache(O, acceptable_items))
 		if(length(stored_plants) >= max_storable_plants)
 			to_chat(user, "<span class='warning'>[src] can't hold any more plants!</span>")
 			return
@@ -167,7 +174,7 @@
 			files.AddDesign2Known(D.blueprint)
 
 		processing = FALSE
-		update_ui_product_list()
+		update_ui_product_list(user)
 		return TRUE
 	else
 		to_chat(user, "<span class='warning'>You cannot put this in [name]!</span>")
@@ -175,7 +182,7 @@
 /**
  * Builds/Updates the `product_list` used by the UI.
  */
-/obj/machinery/biogenerator/proc/update_ui_product_list()
+/obj/machinery/biogenerator/proc/update_ui_product_list(mob/user)
 	product_list = list()
 	for(var/category in categories)
 		product_list[category] = list()
@@ -191,7 +198,8 @@
 				"cost" = D.materials[MAT_BIOMASS] / efficiency
 			)
 
-	SStgui.update_uis(src, update_static_data = TRUE)
+	update_static_data(user)
+	SStgui.update_uis(src)
 
 /obj/machinery/biogenerator/attack_hand(mob/user)
 	if(..())
@@ -201,10 +209,13 @@
 /obj/machinery/biogenerator/attack_ghost(mob/user)
 	ui_interact(user)
 
-/obj/machinery/biogenerator/ui_interact(mob/user, ui_key = "main", datum/tgui/ui = null, force_open = FALSE, datum/tgui/master_ui = null, datum/ui_state/state = GLOB.default_state)
-	ui = SStgui.try_update_ui(user, src, ui_key, ui, force_open)
+/obj/machinery/biogenerator/ui_state(mob/user)
+	return GLOB.default_state
+
+/obj/machinery/biogenerator/ui_interact(mob/user, datum/tgui/ui = null)
+	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
-		ui = new(user, src, ui_key, "Biogenerator", "Biogenerator", 390, 600, master_ui, state)
+		ui = new(user, src, "Biogenerator", "Biogenerator")
 		ui.set_autoupdate(FALSE)
 		ui.open()
 
@@ -263,15 +274,17 @@
 	update_icon(UPDATE_ICON_STATE)
 
 	var/plants_processed = length(stored_plants)
+	var/new_biomass = 0
 	for(var/obj/plant as anything in stored_plants)
-		var/plant_biomass = plant.reagents.get_reagent_amount("nutriment") + plant.reagents.get_reagent_amount("plantmatter")
-		biomass += max(plant_biomass, 0.1) * 10 * productivity
+		var/plant_biomass = plant.reagents?.get_reagent_amount("nutriment") + plant.reagents?.get_reagent_amount("plantmatter")
+		new_biomass += max(plant_biomass, 0.1)
 		qdel(plant)
+	biomass += new_biomass * 10 * productivity
 
 	stored_plants.Cut()
-	playsound(loc, 'sound/machines/blender.ogg', 50, 1)
+	playsound(loc, 'sound/machines/blender.ogg', 50, TRUE)
 	use_power(plants_processed * 150)
-	addtimer(CALLBACK(src, .proc/end_processing), (plants_processed * 5) / productivity)
+	addtimer(CALLBACK(src, PROC_REF(end_processing)), min(20 SECONDS, new_biomass))
 
 /obj/machinery/biogenerator/proc/end_processing()
 	processing = FALSE
@@ -337,7 +350,7 @@
 		for(var/R in D.make_reagents)
 			container.reagents.add_reagent(R, D.make_reagents[R] * amount)
 
-	// Creating all other items, such as monkey cubes or nutriment bottles.
+	// Creating all other items, such as monkey cubes or nutrient bottles.
 	else
 		if(!check_cost(D, amount))
 			return

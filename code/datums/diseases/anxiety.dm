@@ -9,12 +9,13 @@
 	agent = "Excess Lepidopticides"
 	viable_mobtypes = list(/mob/living/carbon/human, /mob/living/carbon/human/monkey)
 	desc = "If left untreated subject will regurgitate butterflies."
-	severity = MEDIUM
+	severity = MINOR
 
 /datum/disease/anxiety/stage_act()
-	..()
+	if(!..())
+		return FALSE
 	switch(stage)
-		if(2) //also changes say, see say.dm
+		if(2)
 			if(prob(5))
 				to_chat(affected_mob, "<span class='notice'>You feel anxious.</span>")
 		if(3)
@@ -38,7 +39,7 @@
 													"<span class='userdanger'>You cough up butterflies!</span>")
 				for(var/i in 1 to 2)
 					var/mob/living/simple_animal/butterfly/B = new(affected_mob.loc)
-					addtimer(CALLBACK(B, /mob/living/simple_animal/butterfly/.proc/decompose), rand(5, 25) SECONDS)
+					addtimer(CALLBACK(B, TYPE_PROC_REF(/mob/living/simple_animal/butterfly, decompose)), rand(5, 25) SECONDS)
 
 /**
  * Made so severe anxiety does not overload the SSmob while keeping it's effect

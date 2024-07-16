@@ -1,14 +1,3 @@
-
-/mob
-	var/bloody_hands = 0
-	var/list/feet_blood_DNA
-	var/feet_blood_color
-	var/blood_state = BLOOD_STATE_NOT_BLOODY
-	var/list/bloody_feet = list(BLOOD_STATE_HUMAN = 0, BLOOD_STATE_XENO = 0, BLOOD_STATE_NOT_BLOODY = 0, BLOOD_BASE_ALPHA = BLOODY_FOOTPRINT_BASE_ALPHA)
-
-/obj/item/clothing/gloves
-	var/transfer_blood = 0
-
 /obj/item/reagent_containers/glass/rag
 	name = "damp rag"
 	desc = "For cleaning up messes, you suppose."
@@ -33,11 +22,10 @@
 	else
 		..()
 
-/obj/item/reagent_containers/glass/rag/afterattack(atom/A as obj|turf|area, mob/user as mob,proximity)
-	if(!proximity) return
-	if(istype(A) && (src in user))
-		user.visible_message("<span class='notice'>[user] starts to wipe down [A] with [src]!</span>")
-		if(do_after(user, wipespeed, target = A))
-			user.visible_message("<span class='notice'>[user] finishes wiping off [A]!</span>")
-			A.clean_blood()
-	return
+/obj/item/reagent_containers/glass/rag/afterattack(atom/target, mob/user, proximity)
+	if(!proximity || ishuman(target)) //Human check so we don't clean the person we're trying to ether
+		return
+	target.cleaning_act(user, src, wipespeed)
+
+/obj/item/reagent_containers/glass/rag/can_clean()
+	return TRUE

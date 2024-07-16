@@ -32,16 +32,16 @@
 /datum/status_effect/offering_item
 	id = "offering item"
 	duration = 10 SECONDS
-	alert_type = /obj/screen/alert/status_effect/offering_item
+	alert_type = /atom/movable/screen/alert/status_effect/offering_item
 
 /datum/status_effect/offering_item/on_creation(mob/living/new_owner, receiver_UID, item_UID)
 	. = ..()
-	var/obj/screen/alert/status_effect/offering_item/offer = linked_alert
+	var/atom/movable/screen/alert/status_effect/offering_item/offer = linked_alert
 	offer.item_UID = item_UID
 	offer.receiver_UID = receiver_UID
 
 
-/obj/screen/alert/status_effect/offering_item
+/atom/movable/screen/alert/status_effect/offering_item
 	name = "Offering Item"
 	desc = "You're currently offering an item someone. Make sure to keep the item in your hand so they can accept it! Click to stop offering your item."
 	icon_state = "offering_item"
@@ -50,7 +50,7 @@
 	/// UID of the item being given.
 	var/item_UID
 
-/obj/screen/alert/status_effect/offering_item/Click(location, control, params)
+/atom/movable/screen/alert/status_effect/offering_item/Click(location, control, params)
 	var/mob/living/carbon/receiver = locateUID(receiver_UID)
 	var/mob/living/carbon/giver = attached_effect.owner
 	var/obj/item/I = locateUID(item_UID)
@@ -72,8 +72,8 @@
 	..()
 	holder.mouse_pointer_icon = 'icons/mouse_icons/give_item.dmi'
 	to_chat(holder, "<span class='info'>You can now left click on someone to give them your held item.</span>")
-	RegisterSignal(holder.mob.get_active_hand(), list(COMSIG_PARENT_QDELETING, COMSIG_ITEM_EQUIPPED, COMSIG_ITEM_DROPPED), /datum/proc/signal_qdel)
-	RegisterSignal(holder.mob, list(SIGNAL_ADDTRAIT(TRAIT_HANDS_BLOCKED), COMSIG_CARBON_SWAP_HANDS), /datum/proc/signal_qdel)
+	RegisterSignal(holder.mob.get_active_hand(), list(COMSIG_PARENT_QDELETING, COMSIG_ITEM_EQUIPPED, COMSIG_ITEM_DROPPED), PROC_REF(signal_qdel))
+	RegisterSignal(holder.mob, list(SIGNAL_ADDTRAIT(TRAIT_HANDS_BLOCKED), COMSIG_CARBON_SWAP_HANDS), PROC_REF(signal_qdel))
 
 
 /datum/click_intercept/give/Destroy(force = FALSE, ...)
@@ -84,9 +84,9 @@
 
 
 /datum/click_intercept/give/InterceptClickOn(mob/user, params, atom/object)
-	if(user == object || !iscarbon(object))
+	if(user == object || !ishuman(object))
 		return
-	var/mob/living/carbon/receiver = object
+	var/mob/living/carbon/human/receiver = object
 	if(receiver.stat != CONSCIOUS)
 		to_chat(user, "<span class='warning'>[receiver] can't accept any items because they're not conscious!</span>")
 		return
@@ -99,7 +99,7 @@
 		return
 	// We use UID() here so that the receiver can have more then one give request at one time.
 	// Otherwise, throwing a new "take item" alert would override any current one also named "take item".
-	receiver.throw_alert("take item [I.UID()]", /obj/screen/alert/take_item, alert_args = list(user, receiver, I))
+	receiver.throw_alert("take item [I.UID()]", /atom/movable/screen/alert/take_item, alert_args = list(user, receiver, I))
 	item_offered = TRUE // TRUE so we don't give them the default chat message in Destroy.
 	to_chat(user, "<span class='info'>You offer [I] to [receiver].</span>")
 	qdel(src)
@@ -111,7 +111,7 @@
  * Alert which appears for a user when another player is attempting to offer them an item.
  * The user can click the alert to accept, or simply do nothing to not take the item.
  */
-/obj/screen/alert/take_item
+/atom/movable/screen/alert/take_item
 	name = "Take Item"
 	desc = "someone wants to hand you an item!"
 	icon_state = "template"
@@ -124,7 +124,7 @@
 	var/item_UID
 
 
-/obj/screen/alert/take_item/Initialize(mapload, mob/living/giver, mob/living/receiver, obj/item/I)
+/atom/movable/screen/alert/take_item/Initialize(mapload, mob/living/giver, mob/living/receiver, obj/item/I)
 	. = ..()
 	desc = "[giver] wants to hand you \a [I]. Click here to accept it!"
 	giver_UID = giver.UID()
@@ -133,28 +133,27 @@
 	giver.apply_status_effect(STATUS_EFFECT_OFFERING_ITEM, receiver_UID, item_UID)
 	add_overlay(icon(I.icon, I.icon_state, SOUTH))
 	add_overlay("alert_flash")
-	RegisterSignal(I, list(COMSIG_ITEM_EQUIPPED, COMSIG_ITEM_DROPPED), .proc/cancel_give)
-	RegisterSignal(giver, list(SIGNAL_ADDTRAIT(TRAIT_HANDS_BLOCKED), COMSIG_CARBON_SWAP_HANDS), .proc/cancel_give)
 	// If either of these atoms are deleted, we need to cancel everything. Also saves having to do null checks before interacting with these atoms.
-	RegisterSignal(I, COMSIG_PARENT_QDELETING, /datum/proc/signal_qdel)
-	RegisterSignal(giver, COMSIG_PARENT_QDELETING, /datum/proc/signal_qdel)
+	RegisterSignal(I, list(COMSIG_PARENT_QDELETING, COMSIG_ITEM_EQUIPPED, COMSIG_ITEM_DROPPED), PROC_REF(cancel_give))
+	RegisterSignal(giver, list(COMSIG_PARENT_QDELETING, SIGNAL_ADDTRAIT(TRAIT_HANDS_BLOCKED), COMSIG_CARBON_SWAP_HANDS), PROC_REF(cancel_give))
 
 
-/obj/screen/alert/take_item/Destroy()
+/atom/movable/screen/alert/take_item/Destroy()
 	var/mob/living/giver = locateUID(giver_UID)
 	giver.remove_status_effect(STATUS_EFFECT_OFFERING_ITEM)
 	return ..()
 
 
-/obj/screen/alert/take_item/proc/cancel_give()
+/atom/movable/screen/alert/take_item/proc/cancel_give()
 	SIGNAL_HANDLER
 	var/mob/living/giver = locateUID(giver_UID)
+	var/mob/living/receiver = locateUID(receiver_UID)
 	to_chat(giver, "<span class='warning'>You need to keep the item in your active hand if you want to hand it to someone!</span>")
-	to_chat(locateUID(receiver_UID), "<span class='warning'>[giver] seems to have given up on giving you [locateUID(item_UID)].</span>")
-	qdel(src)
+	to_chat(receiver, "<span class='warning'>[giver] seems to have given up on giving you [locateUID(item_UID)].</span>")
+	receiver.clear_alert("take item [item_UID]")
 
 
-/obj/screen/alert/take_item/Click(location, control, params)
+/atom/movable/screen/alert/take_item/Click(location, control, params)
 	var/mob/living/receiver = locateUID(receiver_UID)
 	if(receiver.stat != CONSCIOUS)
 		return
@@ -175,11 +174,12 @@
 	receiver.put_in_hands(I)
 	I.add_fingerprint(receiver)
 	I.on_give(giver, receiver)
+	I.pickup(receiver)
 	receiver.visible_message("<span class='notice'>[giver] handed [I] to [receiver].</span>")
 	receiver.clear_alert("take item [item_UID]")
 
 
-/obj/screen/alert/take_item/do_timeout(mob/M, category)
+/atom/movable/screen/alert/take_item/do_timeout(mob/M, category)
 	var/mob/living/giver = locateUID(giver_UID)
 	var/mob/living/receiver = locateUID(receiver_UID)
 	// Make sure we're still nearby. We don't want to show a message if the giver not near us.

@@ -14,7 +14,7 @@
 // Uniform slot
 /datum/gear/uniform
 	main_typepath = /datum/gear/uniform
-	slot = slot_w_uniform
+	slot = SLOT_HUD_JUMPSUIT
 	sort_category = "Uniforms and Casual Dress"
 
 /datum/gear/uniform/suit
@@ -103,12 +103,12 @@
 	path = /obj/item/clothing/under/color/darkred
 
 /datum/gear/uniform/suit/soviet
-	display_name = "USSP uniform"
-	path = /obj/item/clothing/under/soviet
+	display_name = "Old USSP uniform"
+	path = /obj/item/clothing/under/costume/soviet
 
 /datum/gear/uniform/suit/kilt
 	display_name = "Kilt"
-	path = /obj/item/clothing/under/kilt
+	path = /obj/item/clothing/under/costume/kilt
 
 /datum/gear/uniform/skirt
 	main_typepath = /datum/gear/uniform/skirt
@@ -127,7 +127,7 @@
 
 /datum/gear/uniform/skirt/black
 	display_name = "Skirt, black"
-	path = /obj/item/clothing/under/blackskirt
+	path = /obj/item/clothing/under/dress/blackskirt
 
 /datum/gear/uniform/skirt/job
 	main_typepath = /datum/gear/uniform/skirt/job
@@ -135,82 +135,112 @@
 
 /datum/gear/uniform/skirt/job/ce
 	display_name = "Skirt, ce"
-	path = /obj/item/clothing/under/rank/chief_engineer/skirt
+	path = /obj/item/clothing/under/rank/engineering/chief_engineer/skirt
 	allowed_roles = list("Chief Engineer")
 
 /datum/gear/uniform/skirt/job/atmos
 	display_name = "Skirt, atmos"
-	path = /obj/item/clothing/under/rank/atmospheric_technician/skirt
+	path = /obj/item/clothing/under/rank/engineering/atmospheric_technician/skirt
 	allowed_roles = list("Chief Engineer","Life Support Specialist")
 
 /datum/gear/uniform/skirt/job/eng
 	display_name = "Skirt, engineer"
-	path = /obj/item/clothing/under/rank/engineer/skirt
+	path = /obj/item/clothing/under/rank/engineering/engineer/skirt
 	allowed_roles = list("Chief Engineer","Station Engineer")
 
 /datum/gear/uniform/skirt/job/roboticist
 	display_name = "Skirt, roboticist"
-	path = /obj/item/clothing/under/rank/roboticist/skirt
+	path = /obj/item/clothing/under/rank/rnd/roboticist/skirt
 	allowed_roles = list("Research Director","Roboticist")
 
 /datum/gear/uniform/skirt/job/cmo
 	display_name = "Skirt, cmo"
-	path = /obj/item/clothing/under/rank/chief_medical_officer/skirt
+	path = /obj/item/clothing/under/rank/medical/chief_medical_officer/skirt
 	allowed_roles = list("Chief Medical Officer")
 
 /datum/gear/uniform/skirt/job/chem
 	display_name = "Skirt, chemist"
-	path = /obj/item/clothing/under/rank/chemist/skirt
+	path = /obj/item/clothing/under/rank/medical/chemist/skirt
 	allowed_roles = list("Chief Medical Officer","Chemist")
 
 /datum/gear/uniform/skirt/job/viro
 	display_name = "Skirt, virologist"
-	path = /obj/item/clothing/under/rank/virologist/skirt
+	path = /obj/item/clothing/under/rank/medical/virologist/skirt
 	allowed_roles = list("Virologist")
 
 /datum/gear/uniform/skirt/job/med
 	display_name = "Skirt, medical"
-	path = /obj/item/clothing/under/rank/medical/skirt
+	path = /obj/item/clothing/under/rank/medical/doctor/skirt
 	allowed_roles = list("Chief Medical Officer","Medical Doctor","Psychiatrist","Paramedic","Coroner")
 
 /datum/gear/uniform/skirt/job/sci
 	display_name = "Skirt, scientist"
-	path = /obj/item/clothing/under/rank/scientist/skirt
+	path = /obj/item/clothing/under/rank/rnd/scientist/skirt
 	allowed_roles = list("Research Director","Scientist")
 
 /datum/gear/uniform/skirt/job/cargo
 	display_name = "Skirt, cargo"
-	path = /obj/item/clothing/under/rank/cargotech/skirt
+	path = /obj/item/clothing/under/rank/cargo/tech/skirt
 	allowed_roles = list("Quartermaster","Cargo Technician")
 
+/datum/gear/uniform/skirt/job/expedition
+	display_name = "Skirt, expedition"
+	path = /obj/item/clothing/under/rank/cargo/expedition/skirt
+	allowed_roles = list("Quartermaster", "Explorer")
+
 /datum/gear/uniform/skirt/job/qm
-	display_name = "Skirt, QM"
-	path = /obj/item/clothing/under/rank/cargo/skirt
+	display_name = "Skirt, quartermaster"
+	path = /obj/item/clothing/under/rank/cargo/qm/skirt
 	allowed_roles = list("Quartermaster")
 
 /datum/gear/uniform/skirt/job/warden
 	display_name = "Skirt, warden"
-	path = /obj/item/clothing/under/rank/warden/skirt
+	path = /obj/item/clothing/under/rank/security/warden/skirt
 	allowed_roles = list("Head of Security", "Warden")
 
 /datum/gear/uniform/skirt/job/security
 	display_name = "Skirt, security"
-	path = /obj/item/clothing/under/rank/security/skirt
+	path = /obj/item/clothing/under/rank/security/officer/skirt
 	allowed_roles = list("Head of Security", "Warden", "Detective", "Security Officer")
 
 /datum/gear/uniform/skirt/job/head_of_security
 	display_name = "Skirt, hos"
-	path = /obj/item/clothing/under/rank/head_of_security/skirt
+	path = /obj/item/clothing/under/rank/security/head_of_security/skirt
 	allowed_roles = list("Head of Security")
+
+/datum/gear/uniform/skirt/job/clown
+	display_name = "Skirt, clown"
+	path = /obj/item/clothing/under/rank/civilian/clown/skirt
+	allowed_roles = list("Clown")
+
+/datum/gear/uniform/skirt/job/mime
+	display_name = "Skirt, mime"
+	path = /obj/item/clothing/under/rank/civilian/mime/skirt
+	allowed_roles = list("Mime")
+
+/datum/gear/uniform/skirt/job/janitor
+	display_name = "Skirt, janitor"
+	path = /obj/item/clothing/under/rank/civilian/janitor/skirt
+	allowed_roles = list("Janitor")
+
+/datum/gear/uniform/skirt/job/head_of_personnel
+	display_name = "Skirt, hop"
+	path = /obj/item/clothing/under/rank/civilian/hop/skirt
+	allowed_roles = list("Head of Personnel")
+
+/datum/gear/uniform/skirt/job/magistrate
+	display_name = "Skirt, magistrate"
+	path = /obj/item/clothing/under/rank/procedure/magistrate/skirt
+	allowed_roles = list("Magistrate")
 
 /datum/gear/uniform/skirt/job/ntrep
 	display_name = "Skirt, nt rep"
-	path = /obj/item/clothing/under/rank/ntrep/skirt
+	path = /obj/item/clothing/under/rank/procedure/representative/skirt
 	allowed_roles = list("Nanotrasen Representative")
 
 /datum/gear/uniform/skirt/job/blueshield
 	display_name = "Skirt, blueshield"
-	path = /obj/item/clothing/under/rank/blueshield/skirt
+	path = /obj/item/clothing/under/rank/procedure/blueshield/skirt
 	allowed_roles = list("Blueshield")
 
 
@@ -219,13 +249,21 @@
 
 /datum/gear/uniform/medical/pscrubs
 	display_name = "Medical scrubs, purple"
-	path = /obj/item/clothing/under/rank/medical/purple
+	path = /obj/item/clothing/under/rank/medical/scrubs/purple
 	allowed_roles = list("Chief Medical Officer", "Medical Doctor")
 
 /datum/gear/uniform/medical/gscrubs
 	display_name = "Medical scrubs, green"
-	path = /obj/item/clothing/under/rank/medical/green
+	path = /obj/item/clothing/under/rank/medical/scrubs/green
 	allowed_roles = list("Chief Medical Officer", "Medical Doctor")
+
+/datum/gear/uniform/cargo
+	main_typepath = /datum/gear/uniform/cargo
+
+/datum/gear/uniform/cargo/delivery
+	display_name = "Cargo uniform, delivery"
+	path = /obj/item/clothing/under/rank/cargo/tech/delivery
+	allowed_roles = list("Quartermaster", "Cargo Technician")
 
 /datum/gear/uniform/sec
 	main_typepath = /datum/gear/uniform/sec
@@ -237,17 +275,17 @@
 
 /datum/gear/uniform/sec/secorporate
 	display_name = "Security uniform, corporate"
-	path = /obj/item/clothing/under/rank/security/corp
+	path = /obj/item/clothing/under/rank/security/officer/corporate
 	allowed_roles = list("Head of Security", "Warden", "Security Officer")
 
 /datum/gear/uniform/sec/dispatch
 	display_name = "Security uniform, dispatch"
-	path = /obj/item/clothing/under/rank/dispatch
+	path = /obj/item/clothing/under/rank/security/officer/dispatch
 	allowed_roles = list("Head of Security", "Warden", "Security Officer")
 
 /datum/gear/uniform/sec/casual
 	display_name = "Security uniform, casual"
-	path = /obj/item/clothing/under/rank/security2
+	path = /obj/item/clothing/under/rank/security/officer/uniform
 	allowed_roles = list("Head of Security", "Warden", "Security Officer", "Detective")
 
 /datum/gear/uniform/shorts
@@ -255,23 +293,23 @@
 
 /datum/gear/uniform/shorts/red
 	display_name = "Shorts, red"
-	path = /obj/item/clothing/under/shorts/red
+	path = /obj/item/clothing/under/pants/shorts/red
 
 /datum/gear/uniform/shorts/green
 	display_name = "Shorts, green"
-	path = /obj/item/clothing/under/shorts/green
+	path = /obj/item/clothing/under/pants/shorts/green
 
 /datum/gear/uniform/shorts/blue
 	display_name = "Shorts, blue"
-	path = /obj/item/clothing/under/shorts/blue
+	path = /obj/item/clothing/under/pants/shorts/blue
 
 /datum/gear/uniform/shorts/black
 	display_name = "Shorts, black"
-	path = /obj/item/clothing/under/shorts/black
+	path = /obj/item/clothing/under/pants/shorts/black
 
 /datum/gear/uniform/shorts/grey
 	display_name = "Shorts, grey"
-	path = /obj/item/clothing/under/shorts/grey
+	path = /obj/item/clothing/under/pants/shorts/grey
 
 /datum/gear/uniform/pants
 	main_typepath = /datum/gear/uniform/pants
@@ -328,3 +366,33 @@
 	display_name = "Tacticool turtleneck"
 	description = "A sleek black turtleneck paired with some khakis (WARNING DOES NOT HAVE SUIT SENSORS)"
 	path = /obj/item/clothing/under/syndicate/tacticool
+
+/datum/gear/uniform/suit/greyman
+	display_name = "Greyman Henley"
+	description = "Khaki henley paired up with some grey cargo pants (WARNING DOES NOT HAVE SUIT SENSORS)"
+	path = /obj/item/clothing/under/syndicate/greyman
+
+/datum/gear/uniform/suit/assistantformal
+	display_name = "Assistant's Formal Uniform"
+	description = "Formal attire fit for an Assistant."
+	path = /obj/item/clothing/under/misc/assistantformal
+
+/datum/gear/uniform/suit/redhawaiianshirt
+	display_name = "Red Hawaiian T-Shirt"
+	description = "A nice t-shirt to remind about warm beaches. This one is red."
+	path = /obj/item/clothing/under/misc/redhawaiianshirt
+
+/datum/gear/uniform/suit/bluehawaiianshirt
+	display_name = "Blue Hawaiian T-Shirt"
+	description = "A nice t-shirt to remind about warm beaches. This one is blue."
+	path = /obj/item/clothing/under/misc/bluehawaiianshirt
+
+/datum/gear/uniform/suit/pinkhawaiianshirt
+	display_name = "Pink Hawaiian T-Shirt"
+	description = "A nice t-shirt to remind about warm beaches. This one is pink."
+	path = /obj/item/clothing/under/misc/pinkhawaiianshirt
+
+/datum/gear/uniform/suit/orangehawaiianshirt
+	display_name = "Orange Hawaiian T-Shirt"
+	description = "A nice t-shirt to remind about warm beaches. This one is orange."
+	path = /obj/item/clothing/under/misc/orangehawaiianshirt

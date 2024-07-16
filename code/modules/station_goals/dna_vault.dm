@@ -36,24 +36,24 @@
 	<br><br>
 	The DNA Vault needs to contain samples of:
 	<ul style='margin-top: 10px; margin-bottom: 10px;'>
-	 <li>[animal_count] unique animal data.</li>
-	 <li>[plant_count] unique non-standard plant data.</li>
-	 <li>[human_count] unique sapient humanoid DNA data.</li>
+	<li>[animal_count] unique animal data.</li>
+	<li>[plant_count] unique non-standard plant data.</li>
+	<li>[human_count] unique sapient humanoid DNA data.</li>
 	</ul>
 	The base vault parts should be available for shipping by your cargo shuttle."}
 
 /datum/station_goal/dna_vault/on_report()
-	var/datum/supply_packs/P = SSshuttle.supply_packs["[/datum/supply_packs/misc/station_goal/dna_vault]"]
+	var/datum/supply_packs/P = SSeconomy.supply_packs["[/datum/supply_packs/misc/station_goal/dna_vault]"]
 	P.special_enabled = TRUE
 
-	P = SSshuttle.supply_packs["[/datum/supply_packs/misc/station_goal/dna_probes]"]
+	P = SSeconomy.supply_packs["[/datum/supply_packs/misc/station_goal/dna_probes]"]
 	P.special_enabled = TRUE
 
 /datum/station_goal/dna_vault/check_completion()
 	if(..())
 		return TRUE
 	for(var/obj/machinery/dna_vault/V in GLOB.machines)
-		if(V.animals.len >= animal_count && V.plants.len >= plant_count && V.dna.len >= human_count && is_station_contact(V.z))
+		if(length(V.animals) >= animal_count && length(V.plants) >= plant_count && length(V.dna) >= human_count && is_station_contact(V.z))
 			return TRUE
 	return FALSE
 
@@ -121,6 +121,7 @@ GLOBAL_LIST_INIT(non_simple_animals, typecacheof(list(/mob/living/carbon/human/m
 
 /obj/item/circuitboard/machine/dna_vault
 	board_name = "DNA Vault"
+	icon_state = "command"
 	build_path = /obj/machinery/dna_vault
 	origin_tech = "engineering=2;combat=2;bluespace=2" //No freebies!
 	req_components = list(
@@ -149,7 +150,7 @@ GLOBAL_LIST_INIT(non_simple_animals, typecacheof(list(/mob/living/carbon/human/m
 	icon_state = "vault"
 	density = TRUE
 	anchored = TRUE
-	idle_power_usage = 5000
+	idle_power_consumption = 5000
 	pixel_x = -32
 	pixel_y = -64
 	luminosity = 1
@@ -195,15 +196,13 @@ GLOBAL_LIST_INIT(non_simple_animals, typecacheof(list(/mob/living/carbon/human/m
 	icon_state = "vault"
 
 /obj/machinery/dna_vault/power_change()
-	if(powered(power_channel))
-		stat &= ~NOPOWER
-	else
-		stat |= NOPOWER
+	if(!..())
+		return
 	update_icon(UPDATE_ICON_STATE)
 
 
 /obj/machinery/dna_vault/Destroy()
-	QDEL_LIST(fillers)
+	QDEL_LIST_CONTENTS(fillers)
 	return ..()
 
 /obj/machinery/dna_vault/attack_ghost(mob/user)
@@ -216,11 +215,14 @@ GLOBAL_LIST_INIT(non_simple_animals, typecacheof(list(/mob/living/carbon/human/m
 		return TRUE
 	ui_interact(user)
 
-/obj/machinery/dna_vault/ui_interact(mob/user, ui_key = "main", datum/tgui/ui = null, force_open = FALSE, datum/tgui/master_ui = null, datum/ui_state/state = GLOB.default_state)
-	ui = SStgui.try_update_ui(user, src, ui_key, ui, force_open)
+/obj/machinery/dna_vault/ui_state(mob/user)
+	return GLOB.default_state
+
+/obj/machinery/dna_vault/ui_interact(mob/user, datum/tgui/ui = null)
+	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
 		roll_powers(user)
-		ui = new(user, src, ui_key, "DnaVault", name, 350, 400, master_ui, state)
+		ui = new(user, src, "DnaVault", name)
 		ui.open()
 
 /obj/machinery/dna_vault/proc/roll_powers(mob/user)
@@ -266,7 +268,7 @@ GLOBAL_LIST_INIT(non_simple_animals, typecacheof(list(/mob/living/carbon/human/m
 				return TRUE
 
 /obj/machinery/dna_vault/proc/check_goal()
-	if(plants.len >= plants_max && animals.len >= animals_max && dna.len >= dna_max)
+	if(length(plants) >= plants_max && length(animals) >= animals_max && length(dna) >= dna_max)
 		completed = TRUE
 
 /obj/machinery/dna_vault/attackby(obj/item/I, mob/user, params)
@@ -303,7 +305,7 @@ GLOBAL_LIST_INIT(non_simple_animals, typecacheof(list(/mob/living/carbon/human/m
 	switch(upgrade_type)
 		if(VAULT_TOXIN)
 			to_chat(H, "<span class='notice'>You feel resistant to airborne toxins.</span>")
-			var/obj/item/organ/internal/lungs/L = H.get_int_organ(/obj/item/organ/internal/lungs)
+			var/datum/organ/lungs/L = H.get_int_organ_datum(ORGAN_DATUM_LUNGS)
 			if(L)
 				L.tox_breath_dam_min = 0
 				L.tox_breath_dam_max = 0

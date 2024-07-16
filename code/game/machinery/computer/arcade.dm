@@ -22,7 +22,7 @@
 
 
 /obj/machinery/computer/arcade/proc/prizevend(score)
-	if(!contents.len)
+	if(!length(contents))
 		var/prize_amount
 		if(score)
 			prize_amount = score
@@ -52,9 +52,10 @@
 	name = "arcade machine"
 	desc = "Does not support Pinball."
 	icon = 'icons/obj/computer.dmi'
-	icon_state = "arcade"
+	icon_state = "battle_arcade"
+	icon_screen = "battle"
 	circuit = /obj/item/circuitboard/arcade/battle
-	var/enemy_name = "Space Villian"
+	var/enemy_name = "Space Villain"
 	var/temp = "Winners Don't Use Spacedrugs" //Temporary message, for attack messages, etc
 	var/player_hp = 30 //Player health/attack points
 	var/player_mp = 10
@@ -98,9 +99,8 @@
 
 	//user << browse(dat, "window=arcade")
 	//onclose(user, "arcade")
-	var/datum/browser/popup = new(user, "arcade", "Space Villian 2000")
+	var/datum/browser/popup = new(user, "arcade", "Space Villain 2000")
 	popup.set_content(dat)
-	popup.set_title_image(user.browse_rsc_icon(icon, icon_state))
 	popup.open()
 	return
 
@@ -189,8 +189,7 @@
 				emagged = FALSE
 			else
 				SSblackbox.record_feedback("tally", "arcade_status", 1, "win_normal")
-				var/score = player_hp + player_mp + 5
-				prizevend(score)
+				prizevend(35)
 
 	else if(emagged && (turtle >= 4))
 		var/boomamt = rand(5,10)
@@ -259,6 +258,7 @@
 
 		add_hiddenprint(user)
 		updateUsrDialog()
+		return TRUE
 
 // *** THE ORION TRAIL ** //
 
@@ -281,6 +281,7 @@
 	name = "The Orion Trail"
 	desc = "Learn how our ancestors got to Orion, and have fun in the process!"
 	icon_state = "arcade"
+	icon_screen = "orion"
 	circuit = /obj/item/circuitboard/arcade/orion_trail
 	var/busy = FALSE //prevent clickspam that allowed people to ~speedrun~ the game.
 	var/engine = 0
@@ -296,14 +297,14 @@
 	var/event = null
 	var/list/settlers = list("Harry","Larry","Bob")
 	var/list/events = list(ORION_TRAIL_RAIDERS		= 3,
-						   ORION_TRAIL_FLUX			= 1,
-						   ORION_TRAIL_ILLNESS		= 3,
-						   ORION_TRAIL_BREAKDOWN	= 2,
-						   ORION_TRAIL_LING			= 3,
-						   ORION_TRAIL_MALFUNCTION	= 2,
-						   ORION_TRAIL_COLLISION	= 1,
-						   ORION_TRAIL_SPACEPORT	= 2
-						   )
+						ORION_TRAIL_FLUX			= 1,
+						ORION_TRAIL_ILLNESS		= 3,
+						ORION_TRAIL_BREAKDOWN	= 2,
+						ORION_TRAIL_LING			= 3,
+						ORION_TRAIL_MALFUNCTION	= 2,
+						ORION_TRAIL_COLLISION	= 1,
+						ORION_TRAIL_SPACEPORT	= 2
+						)
 	var/list/stops = list()
 	var/list/stopblurbs = list()
 	var/lings_aboard = 0
@@ -353,7 +354,7 @@
 /obj/machinery/computer/arcade/orion_trail/attack_hand(mob/user)
 	if(..())
 		return
-	if(fuel <= 0 || food <=0 || settlers.len == 0)
+	if(fuel <= 0 || food <=0 || length(settlers) == 0)
 		gameover = 1
 		event = null
 	user.set_machine(src)
@@ -361,7 +362,7 @@
 	if(gameover)
 		dat = "<center><h1>Game Over</h1></center>"
 		dat += "Like many before you, your crew never made it to Orion, lost to space... <br><b>Forever</b>."
-		if(settlers.len == 0)
+		if(length(settlers) == 0)
 			dat += "<br>Your entire crew died, your ship joins the fleet of ghost-ships littering the galaxy."
 		else
 			if(food <= 0)
@@ -410,7 +411,6 @@
 		dat += "<P ALIGN=Right><a href='byond://?src=[UID()];close=1'>Close</a></P>"
 	var/datum/browser/popup = new(user, "arcade", "The Orion Trail",400,700)
 	popup.set_content(dat)
-	popup.set_title_image(user.browse_rsc_icon(icon, icon_state))
 	popup.open()
 	return
 
@@ -469,7 +469,7 @@
 						playsound(loc, 'sound/effects/splat.ogg', 50, TRUE)
 						M.adjust_nutrition(-50) //lose a lot of food
 						var/turf/location = usr.loc
-						if(istype(location, /turf/simulated))
+						if(issimulatedturf(location))
 							location.add_vomit_floor(TRUE)
 				if(ORION_TRAIL_FLUX)
 					if(prob(75))
@@ -757,7 +757,7 @@
 
 		if(ORION_TRAIL_LING)
 			eventdat += "Strange reports warn of changelings infiltrating crews on trips to Orion..."
-			if(settlers.len <= 2)
+			if(length(settlers) <= 2)
 				eventdat += "<br>Your crew's chance of reaching Orion is so slim the changelings likely avoided your ship..."
 				eventdat += "<P ALIGN=Right><a href='byond://?src=[UID()];eventclose=1'>Continue</a></P>"
 				eventdat += "<P ALIGN=Right><a href='byond://?src=[UID()];close=1'>Close</a></P>"
@@ -860,14 +860,14 @@
 				eventdat += "<P ALIGN=Right>Crew Management:</P>"
 
 				//Buy crew
-				if(food >= 10 && fuel >= 10)
+				if(food > 10 && fuel > 10)
 					eventdat += "<P ALIGN=Right><a href='byond://?src=[UID()];buycrew=1'>Hire a new Crewmember (-10FU,-10FO)</a></P>"
 				else
 					eventdat += "<P ALIGN=Right>Cant afford a new Crewmember</P>"
 
 				//Sell crew
-				if(settlers.len > 1)
-					eventdat += "<P ALIGN=Right><a href='byond://?src=[UID()];sellcrew=1'>Sell crew for Fuel and Food (+15FU,+15FO)</a></P>"
+				if(length(settlers) > 1)
+					eventdat += "<p ALIGN=Right><a href='byond://?src=[UID()];sellcrew=1'>Sell crew for Fuel and Food (+7FU,+7FO)</a></p>"
 				else
 					eventdat += "<P ALIGN=Right>Cant afford to sell a Crewmember</P>"
 
@@ -924,7 +924,6 @@
 		alive++
 	return newcrew
 
-
 //Remove Random/Specific crewmember
 /obj/machinery/computer/arcade/orion_trail/proc/remove_crewmember(specific = "", dont_remove = "")
 	var/list/safe2remove = settlers
@@ -934,7 +933,7 @@
 	if(specific && specific != dont_remove)
 		safe2remove = list(specific)
 	else
-		if(safe2remove.len >= 1) //need to make sure we even have anyone to remove
+		if(length(safe2remove) >= 1) //need to make sure we even have anyone to remove
 			removed = pick(safe2remove)
 
 	if(removed)
@@ -954,7 +953,7 @@
 		message_admins("[key_name_admin(usr)] made it to Orion on an emagged machine and got an explosive toy ship.")
 		log_game("[key_name(usr)] made it to Orion on an emagged machine and got an explosive toy ship.")
 	else
-		var/score = alive + round(food/2) + round(fuel/5) + engine + hull + electronics - lings_aboard
+		var/score = 10 * (alive - lings_aboard) + 5 * (engine + hull + electronics)
 		prizevend(score)
 	emagged = FALSE
 	name = "The Orion Trail"
@@ -968,6 +967,7 @@
 		add_hiddenprint(user)
 		newgame()
 		emagged = TRUE
+		return TRUE
 
 /mob/living/simple_animal/hostile/syndicate/ranged/orion
 	name = "spaceport security"

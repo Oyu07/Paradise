@@ -5,22 +5,21 @@
 	department_flag = JOBCAT_SUPPORT
 	total_positions = 1
 	spawn_positions = 1
-	is_service = TRUE
+	job_department_flags = DEP_FLAG_SERVICE
 	supervisors = "the head of personnel"
 	department_head = list("Head of Personnel")
 	selection_color = "#dddddd"
 	access = list(ACCESS_MORGUE, ACCESS_CHAPEL_OFFICE, ACCESS_CREMATORIUM, ACCESS_MAINT_TUNNELS)
-	minimal_access = list(ACCESS_MORGUE, ACCESS_CHAPEL_OFFICE, ACCESS_CREMATORIUM, ACCESS_MAINT_TUNNELS)
-
 	outfit = /datum/outfit/job/chaplain
 
 /datum/outfit/job/chaplain
 	name = "Chaplain"
 	jobtype = /datum/job/chaplain
 
-	uniform = /obj/item/clothing/under/rank/chaplain
+	uniform = /obj/item/clothing/under/rank/civilian/chaplain
 	shoes = /obj/item/clothing/shoes/black
 	l_ear = /obj/item/radio/headset/headset_service
+	id = /obj/item/card/id/chaplain
 	pda = /obj/item/pda/chaplain
 	backpack_contents = list(
 		/obj/item/camera/spooky = 1,
@@ -33,10 +32,11 @@
 	if(visualsOnly)
 		return
 
-	if(H.mind)
-		H.mind.isholy = TRUE
+	INVOKE_ASYNC(src, PROC_REF(religion_pick), H)
 
-	INVOKE_ASYNC(src, .proc/religion_pick, H)
+/datum/outfit/job/chaplain/on_mind_initialize(mob/living/carbon/human/H)
+	. = ..()
+	ADD_TRAIT(H.mind, TRAIT_HOLY, ROUNDSTART_TRAIT)
 
 /datum/outfit/job/chaplain/proc/religion_pick(mob/living/carbon/human/user)
 	var/obj/item/storage/bible/B = new /obj/item/storage/bible(get_turf(user))
@@ -80,7 +80,7 @@
 	B.deity_name = new_deity
 	SSblackbox.record_feedback("text", "religion_deity", 1, "[new_deity]", 1)
 
-	user.AddSpell(new /obj/effect/proc_holder/spell/chaplain_bless(null))
+	user.AddSpell(new /datum/spell/chaplain_bless(null))
 
 	if(SSticker)
 		SSticker.Bible_deity_name = B.deity_name

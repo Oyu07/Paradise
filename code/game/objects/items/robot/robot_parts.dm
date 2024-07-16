@@ -4,7 +4,7 @@
 	item_state = "buildpipe"
 	icon_state = "blank"
 	flags = CONDUCT
-	slot_flags = SLOT_BELT
+	slot_flags = SLOT_FLAG_BELT
 	var/list/part = null
 	var/sabotaged = FALSE //Emagging limbs can have repercussions when installed as prosthetics.
 	var/model_info = "Unbranded"
@@ -23,8 +23,10 @@
 	else
 		name = "robot [initial(name)]"
 
+	AddComponent(/datum/component/surgery_initiator/limb, forced_surgery = /datum/surgery/attach_robotic_limb)
+
 /obj/item/robot_parts/attack_self(mob/user)
-	var/choice = input(user, "Select the company appearance for this limb.", "Limb Company Selection") as null|anything in GLOB.selectable_robolimbs
+	var/choice = tgui_input_list(user, "Select the company appearance for this limb", "Limb Company Selection", GLOB.selectable_robolimbs)
 	if(!choice)
 		return
 	if(loc != user)
@@ -85,6 +87,7 @@
 	name = "endoskeleton"
 	desc = "A complex metal backbone with standard limb sockets and pseudomuscle anchors."
 	icon_state = "robo_suit"
+	w_class = WEIGHT_CLASS_BULKY
 	model_info = null
 	var/obj/item/robot_parts/l_arm/l_arm = null
 	var/obj/item/robot_parts/r_arm/r_arm = null
@@ -250,7 +253,7 @@
 				to_chat(user, "<span class='warning'>Sticking a dead [M] into the frame would sort of defeat the purpose.</span>")
 				return
 
-			if(M.brainmob.mind in SSticker.mode.head_revolutionaries)
+			if(M.brainmob.mind?.has_antag_datum(/datum/antagonist/rev/head))
 				to_chat(user, "<span class='warning'>The frame's firmware lets out a shrill sound, and flashes 'Abnormal Memory Engram'. It refuses to accept [M].</span>")
 				return
 
@@ -260,15 +263,15 @@
 			if(!aisync)
 				lawsync = FALSE
 
-			var/mob/living/silicon/robot/O = new /mob/living/silicon/robot(get_turf(loc), unfinished = 1, ai_to_sync_to = forced_ai)
+			var/mob/living/silicon/robot/O = new /mob/living/silicon/robot(get_turf(loc), unfinished = 1, connect_to_AI = aisync, ai_to_sync_to = forced_ai)
 			if(!O)
 				return
 
 			user.drop_item()
 
-			var/datum/job_objective/make_cyborg/task = user.mind.findJobTask(/datum/job_objective/make_cyborg)
+			var/datum/job_objective/make_cyborg/task = user.mind.find_job_task(/datum/job_objective/make_cyborg)
 			if(istype(task))
-				task.unit_completed()
+				task.completed = TRUE
 
 			O.invisibility = 0
 			//Transfer debug settings to new mob
@@ -293,7 +296,6 @@
 
 			var/datum/robot_component/cell_component = O.components["power cell"]
 			cell_component.install(chest.cell)
-			chest.cell.forceMove(O)
 			chest.cell = null
 
 			M.forceMove(O) //Should fix cybros run time erroring when blown up. It got deleted before, along with the frame.
@@ -312,24 +314,24 @@
 			O.robot_suit = src
 
 			if(!locomotion)
-				O.lockcharge = 1
-				to_chat(O, "<span class='warning'>Error: Servo motors unresponsive.</span>")
+				O.SetLockdown(TRUE)
+				to_chat(O, "<span class='danger'>Error: Servo motors unresponsive. Lockdown enabled.</span>")
 
 		else
 			to_chat(user, "<span class='warning'>The MMI must go in after everything else!</span>")
 
-	if(istype(W,/obj/item/pen))
+	if(is_pen(W))
 		to_chat(user, "<span class='warning'>You need to use a multitool to name [src]!</span>")
 	return
 
 /obj/item/robot_parts/robot_suit/proc/Interact(mob/user)
-			var/t1 = "Designation: <A href='?src=[UID()];Name=1'>[(created_name ? "[created_name]" : "Default Cyborg")]</a><br>\n"
-			t1 += "Master AI: <A href='?src=[UID()];Master=1'>[(forced_ai ? "[forced_ai.name]" : "Automatic")]</a><br><br>\n"
+			var/t1 = "Designation: <A href='byond://?src=[UID()];Name=1'>[(created_name ? "[created_name]" : "Default Cyborg")]</a><br>\n"
+			t1 += "Master AI: <A href='byond://?src=[UID()];Master=1'>[(forced_ai ? "[forced_ai.name]" : "Automatic")]</a><br><br>\n"
 
-			t1 += "LawSync Port: <A href='?src=[UID()];Law=1'>[(lawsync ? "Open" : "Closed")]</a><br>\n"
-			t1 += "AI Connection Port: <A href='?src=[UID()];AI=1'>[(aisync ? "Open" : "Closed")]</a><br>\n"
-			t1 += "Servo Motor Functions: <A href='?src=[UID()];Loco=1'>[(locomotion ? "Unlocked" : "Locked")]</a><br>\n"
-			t1 += "Panel Lock: <A href='?src=[UID()];Panel=1'>[(panel_locked ? "Engaged" : "Disengaged")]</a><br>\n"
+			t1 += "LawSync Port: <A href='byond://?src=[UID()];Law=1'>[(lawsync ? "Open" : "Closed")]</a><br>\n"
+			t1 += "AI Connection Port: <A href='byond://?src=[UID()];AI=1'>[(aisync ? "Open" : "Closed")]</a><br>\n"
+			t1 += "Servo Motor Functions: <A href='byond://?src=[UID()];Loco=1'>[(locomotion ? "Unlocked" : "Locked")]</a><br>\n"
+			t1 += "Panel Lock: <A href='byond://?src=[UID()];Panel=1'>[(panel_locked ? "Engaged" : "Disengaged")]</a><br>\n"
 			var/datum/browser/popup = new(user, "robotdebug", "Cyborg Boot Debug", 310, 220)
 			popup.set_content(t1)
 			popup.open()
@@ -395,7 +397,7 @@
 /obj/item/robot_parts/head/attackby(obj/item/W as obj, mob/user as mob, params)
 	..()
 	if(istype(W, /obj/item/flash))
-		if(istype(user,/mob/living/silicon/robot))
+		if(isrobot(user))
 			to_chat(user, "<span class='warning'>How do you propose to do that?</span>")
 			return
 		else if(flash1 && flash2)
@@ -424,3 +426,4 @@
 	else
 		to_chat(user, "<span class='warning'>You slide the emag into the dataport on [src] and short out the safeties.</span>")
 		sabotaged = TRUE
+		return TRUE

@@ -52,9 +52,12 @@ GLOBAL_LIST_INIT(hallucinations, list(
 	/// Lazy list of images created as part of the hallucination. Cleared on destruction.
 	var/list/image/images = null
 
-/obj/effect/hallucination/Initialize(mapload, mob/living/carbon/target)
+/obj/effect/hallucination/Initialize(mapload, mob/living/carbon/hallucination_target)
 	. = ..()
-	src.target = target
+	if(QDELETED(hallucination_target))
+		qdel(src)
+		return
+	target = hallucination_target
 	if(hallucination_icon && hallucination_icon_state)
 		var/image/I = image(hallucination_icon, hallucination_override ? src : get_turf(src), hallucination_icon_state)
 		I.override = hallucination_override
@@ -114,7 +117,7 @@ GLOBAL_LIST_INIT(hallucinations, list(
   * * delay - Delay in deciseconds.
   */
 /obj/effect/hallucination/proc/clear_icon_in(image/I, delay)
-	addtimer(CALLBACK(src, .proc/clear_icon, I), delay)
+	addtimer(CALLBACK(src, PROC_REF(clear_icon), I), delay)
 
 /**
   * Clears all images from the hallucination.
@@ -123,7 +126,7 @@ GLOBAL_LIST_INIT(hallucinations, list(
 	if(!images)
 		return
 	target?.client?.images -= images
-	QDEL_LIST(images)
+	QDEL_LIST_CONTENTS(images)
 
 /**
   * Plays a sound to the target only.
@@ -141,4 +144,4 @@ GLOBAL_LIST_INIT(hallucinations, list(
 	if(time == 0) // whatever
 		target?.playsound_local(source, snd, volume, vary, frequency)
 		return
-	addtimer(CALLBACK(target, /mob/.proc/playsound_local, source, snd, volume, vary, frequency), time)
+	addtimer(CALLBACK(target, TYPE_PROC_REF(/mob, playsound_local), source, snd, volume, vary, frequency), time)

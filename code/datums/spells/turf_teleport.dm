@@ -1,4 +1,4 @@
-/obj/effect/proc_holder/spell/turf_teleport
+/datum/spell/turf_teleport
 	name = "Turf Teleport"
 	desc = "This spell teleports the target to the turf in range."
 	nonabstract_req = TRUE
@@ -14,18 +14,18 @@
 	var/sound1 = 'sound/weapons/zapbang.ogg'
 	var/sound2 = 'sound/weapons/zapbang.ogg'
 
-/obj/effect/proc_holder/spell/turf_teleport/create_new_targeting()
+/datum/spell/turf_teleport/create_new_targeting()
 	return new /datum/spell_targeting/self
 
-/obj/effect/proc_holder/spell/turf_teleport/cast(list/targets,mob/living/user = usr)
+/datum/spell/turf_teleport/cast(list/targets,mob/living/user = usr)
 	if(sound1)
-		playsound(get_turf(user), sound1, 50,1)
+		playsound(get_turf(user), sound1, 50, TRUE)
 
 	for(var/mob/living/target in targets)
-		var/list/turfs = new/list()
+		var/list/turfs = list()
 		for(var/turf/T in range(target,outer_tele_radius))
 			if(T in range(target,inner_tele_radius)) continue
-			if(istype(T,/turf/space) && !include_space) continue
+			if(isspaceturf(T) && !include_space) continue
 			if(T.density && !include_dense) continue
 			if(T.x>world.maxx-outer_tele_radius || T.x<outer_tele_radius)	continue	//putting them at the edge is dumb
 			if(T.y>world.maxy-outer_tele_radius || T.y<outer_tele_radius)	continue
@@ -35,7 +35,7 @@
 					continue
 			turfs += T
 
-		if(!turfs.len)
+		if(!length(turfs))
 			var/list/turfs_to_pick_from = list()
 			for(var/turf/T in orange(target,outer_tele_radius))
 				if(!(T in orange(target,inner_tele_radius)))

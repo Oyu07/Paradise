@@ -23,6 +23,8 @@
 	var/thing_to_place = pickweight(result)
 	if(ispath(thing_to_place, /datum/nothing))
 		// Nothing.
+		qdel(src) // See line 13, this needs moving to /Initialize() so we can use the qdel hint already
+		return
 	else if(ispath(thing_to_place, /turf))
 		T.ChangeTurf(thing_to_place)
 	else
@@ -55,7 +57,7 @@
 	/datum/nothing = 20,
 	/obj/effect/decal/cleanable/blood/oil = 1)
 
-/obj/effect/spawner/random_spawners/oil_maybe
+/obj/effect/spawner/random_spawners/oil_often
 	name = "oil often"
 	icon_state = "oil"
 	result = list(
@@ -128,11 +130,18 @@
 	/datum/nothing = 1,
 	/obj/effect/decal/cleanable/dirt = 1)
 
-/obj/effect/spawner/random_spawners/dirt_rare
-	name = "dirt rare"
+/obj/effect/spawner/random_spawners/dirt_often
+	name = "dirt often"
 	icon_state = "dirt"
 	result = list(
-	/datum/nothing = 10,
+	/datum/nothing = 5,
+	/obj/effect/decal/cleanable/dirt = 1)
+
+/obj/effect/spawner/random_spawners/dirt_maybe
+	name = "dirt maybe"
+	icon_state = "dirt"
+	result = list(
+	/datum/nothing = 7,
 	/obj/effect/decal/cleanable/dirt = 1)
 
 /obj/effect/spawner/random_spawners/fungus_maybe
@@ -140,17 +149,29 @@
 	icon_state = "fungus"
 	color = "#D5820B"
 	result = list(
-	/turf/simulated/wall = 7,
-	/obj/effect/decal/cleanable/fungus = 1)
+		/datum/nothing = 7,
+		/obj/effect/decal/cleanable/fungus = 1)
 
 /obj/effect/spawner/random_spawners/fungus_probably
 	name = "fungus probably"
 	icon_state = "fungus"
 	color = "#D5820B"
 	result = list(
-	/turf/simulated/wall = 1,
-	/obj/effect/decal/cleanable/fungus = 7)
+		/datum/nothing = 1,
+		/obj/effect/decal/cleanable/fungus = 7)
 
+/obj/effect/spawner/random_spawners/mod
+	name = "MOD module spawner"
+	desc = "Modularize this, please."
+	icon_state = "circuit"
+
+/obj/effect/spawner/random_spawners/mod/maint
+	name = "maint MOD module spawner"
+	result = list(
+		/obj/item/mod/module/springlock = 2,
+		/obj/item/mod/module/balloon = 1,
+		/obj/item/mod/module/stamp = 1
+	)
 
 
 // z6 DEPOT SPAWNERS
@@ -172,7 +193,6 @@
 	result = list(/datum/nothing = 1,
 		/obj/machinery/porta_turret/syndicate/exterior = 1)
 
-
 // Mobs
 
 /obj/effect/spawner/random_spawners/syndicate/mob
@@ -182,7 +202,6 @@
 	result = list(/datum/nothing = 1,
 		/mob/living/simple_animal/hostile/syndicate/melee/autogib/depot = 1)
 
-
 // Traps
 
 /obj/effect/spawner/random_spawners/syndicate/trap
@@ -190,10 +209,16 @@
 	color = "#000000"
 
 /obj/effect/spawner/random_spawners/syndicate/trap/pizzabomb
-	name = "50pc trap pizza"
+	name = "33pc trap pizza"
 	result = list(/obj/item/pizzabox/meat = 1,
 		/obj/item/pizzabox/hawaiian = 1,
-		/obj/item/pizza_bomb/autoarm = 1)
+		/obj/item/pizzabox/margherita = 1,
+		/obj/item/pizzabox/vegetable = 1,
+		/obj/item/pizzabox/mushroom = 1,
+		/obj/item/pizzabox/pepperoni = 7, //Higher weight as a pizza bomb looks like pepperoni by default
+		/obj/item/pizzabox/garlic = 1,
+		/obj/item/pizzabox/firecracker = 1,
+		/obj/item/pizzabox/pizza_bomb/autoarm = 7)
 
 /obj/effect/spawner/random_spawners/syndicate/trap/medbot
 	name = "50pc trap medibot"
@@ -228,11 +253,11 @@
 		/obj/item/toy/syndicateballoon = 1,
 		/obj/item/soap/syndie = 1,
 		/obj/item/clothing/under/syndicate = 1,
-		/obj/item/clothing/under/syndicate/tacticool = 1,
 		/obj/item/clothing/mask/gas/syndicate = 1,
 		/obj/item/suppressor = 1,
 		/obj/item/coin/antagtoken/syndicate = 1,
-		/obj/item/storage/box/syndie_kit/cutouts = 1)
+		/obj/item/storage/box/syndie_kit/space = 1,
+		/obj/item/clothing/shoes/magboots/syndie = 1)
 
 /obj/effect/spawner/random_spawners/syndicate/loot/stetchkin
 	name = "20pc stetchkin"
@@ -240,87 +265,78 @@
 	spawn_inside = null
 	result = list(/datum/nothing = 1,
 		/obj/item/wrench = 1,
-		/obj/item/reagent_containers/food/snacks/syndicake = 1,
+		/obj/item/food/snacks/syndicake = 1,
 		/obj/item/coin/antagtoken/syndicate = 1,
 		/obj/item/gun/projectile/automatic/pistol = 1)
 
 /obj/effect/spawner/random_spawners/syndicate/loot/level2
 	name = "rare loot"
-	// Loot schema: space gear, basic armor, basic ammo (10mm, rcd), drugs, more dangerous/useful gimmick items, lower-value minerals
+	// Basic stealth, utility and environmental gear.
 	result = list(/datum/nothing = 27,
-		/obj/item/storage/box/syndie_kit/space = 1,
-		/obj/item/storage/box/syndie_kit/hardsuit = 1,
-		/obj/item/clothing/shoes/magboots/syndie = 1,
-		/obj/item/clothing/suit/armor/vest/combat = 1,
+		/obj/item/mod/control/pre_equipped/traitor = 1,
 		/obj/item/ammo_box/magazine/m10mm = 1,
-		/obj/item/storage/pill_bottle/happy = 1,
-		/obj/item/storage/pill_bottle/zoom = 1,
-		/obj/item/storage/pill_bottle/random_drug_bottle = 2,
 		/obj/item/storage/backpack/duffel/syndie/med/surgery = 1,
 		/obj/item/clothing/shoes/chameleon/noslip = 1,
 		/obj/item/storage/belt/military = 1,
 		/obj/item/clothing/under/chameleon = 1,
 		/obj/item/storage/backpack/satchel_flat = 1,
-		/obj/item/rcd = 1,
-		/obj/item/rcd_ammo = 1,
 		/obj/item/stamp/chameleon = 1,
-		/obj/item/flag/chameleon = 1,
 		/obj/item/lighter/zippo/gonzofist = 1,
-		/obj/item/clothing/gloves/fingerless/rapid = 1,
-		/obj/item/grenade/spawnergrenade/manhacks = 1,
-		/obj/item/grenade/syndieminibomb = 1,
-		/obj/item/storage/box/syndie_kit/throwing_weapons = 1,
-		/obj/item/pen/edagger = 1,
 		/obj/item/stack/sheet/mineral/plasma{amount = 20} = 1,
 		/obj/item/stack/sheet/mineral/silver{amount = 20} = 1,
-		/obj/item/stack/sheet/mineral/gold{amount = 20} = 1)
+		/obj/item/stack/sheet/mineral/gold{amount = 20} = 1,
+		/obj/item/stack/sheet/mineral/uranium{amount = 20} = 1,
+		/obj/item/mod/module/noslip = 1,
+		/obj/item/mod/module/visor/night = 1,
+		/obj/item/clothing/gloves/color/black/thief = 1,
+		/obj/item/clothing/suit/storage/iaa/blackjacket/armored = 1,
+		/obj/item/clothing/suit/jacket/bomber/syndicate = 1,
+		/obj/item/mod/module/holster/hidden = 1,
+		/obj/item/storage/firstaid/tactical = 1,
+		/obj/item/clothing/under/syndicate/silicon_cham = 1,
+		/obj/item/storage/box/syndie_kit/camera_bug = 1,
+		/obj/item/gun/projectile/automatic/toy/pistol/riot = 1,
+		/obj/item/flash/cameraflash = 1,
+		/obj/item/mod/module/chameleon = 1,
+		/obj/item/reagent_containers/hypospray/autoinjector/nanocalcium = 1)
 
 /obj/effect/spawner/random_spawners/syndicate/loot/level3
 	name = "officer loot"
-	// Loot schema: medkits, very useful devices (jammer, illegal upgrade, RCD), better quality ammo (AP, fire), basic weapons (pistol, empgrenade), high value ores (diamond, uranium)
+	// Primarily utility items with occasional low damage weaponry.
 	result = list(/datum/nothing = 25,
 		/obj/item/jammer = 1,
-		/obj/item/storage/firstaid/regular = 1,
-		/obj/item/storage/box/syndie_kit/bonerepair = 1,
-		/obj/item/gun/projectile/automatic/pistol = 1,
-		/obj/item/stock_parts/cell/bluespace = 1,
-		/obj/item/card/emag = 1,
 		/obj/item/encryptionkey/binary = 1,
 		/obj/item/pinpointer/advpinpointer = 1,
-		/obj/item/borg/upgrade/vtec = 1,
 		/obj/item/borg/upgrade/syndicate = 1,
 		/obj/item/borg/upgrade/selfrepair = 1,
+		/obj/item/storage/box/syndie_kit/stechkin = 1,
 		/obj/item/stack/sheet/mineral/diamond{amount = 10} = 1,
 		/obj/item/stack/sheet/mineral/uranium{amount = 10} = 1,
-		/obj/item/clothing/shoes/magboots/syndie/advance = 1,
-		/obj/item/grenade/empgrenade = 1,
-		/obj/item/grenade/clown_grenade = 1,
-		/obj/item/grenade/spawnergrenade/feral_cats = 1,
-		/obj/item/ammo_box/magazine/m10mm/ap = 1,
-		/obj/item/ammo_box/magazine/m10mm/fire = 1,
-		/obj/item/ammo_box/magazine/m10mm/hp = 1,
-		/obj/item/storage/box/syndie_kit/emp = 1,
-		/obj/item/toy/carpplushie/dehy_carp = 1,
-		/obj/item/clothing/glasses/hud/security/chameleon = 1)
+		/obj/item/clothing/shoes/magboots/elite = 1,
+		/obj/item/clothing/glasses/hud/security/chameleon = 1,
+		/obj/item/mod/module/visor/thermal = 1,
+		/obj/item/mod/module/stealth = 1,
+		/obj/item/mod/module/power_kick = 1,
+		/obj/item/storage/box/syndidonkpockets = 1,
+		/obj/item/pen/edagger = 1,
+		/obj/item/door_remote/omni/access_tuner = 1,
+		/obj/item/clothing/glasses/thermal = 1)
+
 
 /obj/effect/spawner/random_spawners/syndicate/loot/level4
 	name = "armory loot"
 	spawn_inside = /obj/structure/closet/secure_closet/syndicate/depot/armory
-	// Loot schema: high-power weapons (m90, esword, ebow, revolver), devices that negate depot challenges (thermal glasses, chameleon device), explosives
-	result = list(/obj/item/gun/projectile/automatic/c20r = 1,
-		/obj/item/gun/projectile/automatic/m90 = 1,
-		/obj/item/gun/projectile/automatic/sniper_rifle/syndicate = 1,
-		/obj/item/melee/energy/sword/saber = 1,
-		/obj/item/gun/energy/kinetic_accelerator/crossbow = 1,
-		/obj/item/gun/projectile/revolver = 1,
-		/obj/item/clothing/gloves/color/yellow/power = 1,
-		/obj/item/twohanded/chainsaw = 1,
-		/obj/item/bee_briefcase = 1,
-		/obj/item/twohanded/fireaxe/energized = 1,
-		/obj/item/clothing/glasses/thermal = 1,
+	// Combat orientated items that could give the player an advantage if an antag messes with them.
+	result = list(/obj/item/melee/energy/sword/saber = 1,
+		/obj/item/autosurgeon/organ/syndicate/oneuse/razorwire = 1,
 		/obj/item/chameleon = 1,
+		/obj/item/CQC_manual = 1,
 		/obj/item/reagent_containers/hypospray/autoinjector/stimulants = 1,
-		/obj/item/grenade/plastic/c4/x4 = 1)
+		/obj/item/clothing/gloves/fingerless/rapid = 1,
+		/obj/item/gun/medbeam = 1,
+		/obj/item/shield/energy = 1,
+		/obj/item/storage/box/syndie_kit/teleporter = 1,
+		/obj/item/weaponcrafting/gunkit/universal_gun_kit = 1)
 
 
 // Layout-affecting spawns

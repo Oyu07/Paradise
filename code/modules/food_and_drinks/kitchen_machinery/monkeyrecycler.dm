@@ -8,14 +8,13 @@ GLOBAL_LIST_EMPTY(monkey_recyclers)
 	layer = 2.9
 	density = TRUE
 	anchored = TRUE
-	use_power = IDLE_POWER_USE
-	idle_power_usage = 5
-	active_power_usage = 50
+	idle_power_consumption = 5
+	active_power_consumption = 50
 	var/grinded = 0
 	var/required_grind = 5
 	var/cube_production = 1
 	var/cycle_through = 0
-	var/obj/item/reagent_containers/food/snacks/monkeycube/cube_type = /obj/item/reagent_containers/food/snacks/monkeycube
+	var/obj/item/food/snacks/monkeycube/cube_type = /obj/item/food/snacks/monkeycube
 	var/list/connected = list()
 
 /obj/machinery/monkey_recycler/Initialize(mapload)
@@ -26,6 +25,7 @@ GLOBAL_LIST_EMPTY(monkey_recyclers)
 	component_parts += new /obj/item/stock_parts/matter_bin(null)
 	GLOB.monkey_recyclers += src
 	RefreshParts()
+	locate_camera_console()
 
 /obj/machinery/monkey_recycler/Destroy()
 	GLOB.monkey_recyclers -= src
@@ -34,6 +34,15 @@ GLOBAL_LIST_EMPTY(monkey_recyclers)
 		console.connected_recycler = null
 	connected.Cut()
 	return ..()
+
+/obj/machinery/monkey_recycler/proc/locate_camera_console()
+	if(length(connected))
+		return // we're already connected!
+	for(var/obj/machinery/computer/camera_advanced/xenobio/xeno_camera in GLOB.machines)
+		if(get_area(xeno_camera) == get_area(loc))
+			xeno_camera.connected_recycler = src
+			connected |= xeno_camera
+			break
 
 /obj/machinery/monkey_recycler/RefreshParts()
 	var/req_grind = 5
@@ -52,7 +61,7 @@ GLOBAL_LIST_EMPTY(monkey_recyclers)
 	if(exchange_parts(user, O))
 		return
 
-	if(default_unfasten_wrench(user, O))
+	if(default_unfasten_wrench(user, O, time = 4 SECONDS))
 		power_change()
 		return
 
@@ -64,15 +73,17 @@ GLOBAL_LIST_EMPTY(monkey_recyclers)
 			cycle_through++
 			switch(cycle_through)
 				if(1)
-					cube_type = /obj/item/reagent_containers/food/snacks/monkeycube/farwacube
+					cube_type = /obj/item/food/snacks/monkeycube/nian_wormecube
 				if(2)
-					cube_type = /obj/item/reagent_containers/food/snacks/monkeycube/wolpincube
+					cube_type = /obj/item/food/snacks/monkeycube/farwacube
 				if(3)
-					cube_type = /obj/item/reagent_containers/food/snacks/monkeycube/stokcube
+					cube_type = /obj/item/food/snacks/monkeycube/wolpincube
 				if(4)
-					cube_type = /obj/item/reagent_containers/food/snacks/monkeycube/neaeracube
+					cube_type = /obj/item/food/snacks/monkeycube/stokcube
 				if(5)
-					cube_type = /obj/item/reagent_containers/food/snacks/monkeycube
+					cube_type = /obj/item/food/snacks/monkeycube/neaeracube
+				if(6)
+					cube_type = /obj/item/food/snacks/monkeycube
 					cycle_through = 0
 			to_chat(user, "<span class='notice'>You change the monkeycube type to [initial(cube_type.name)].</span>")
 		else
@@ -85,14 +96,15 @@ GLOBAL_LIST_EMPTY(monkey_recyclers)
 	if(istype(O, /obj/item/grab))
 		var/obj/item/grab/G = O
 		var/grabbed = G.affecting
-		if(istype(grabbed, /mob/living/carbon/human))
+		if(ishuman(grabbed))
 			var/mob/living/carbon/human/target = grabbed
 			if(issmall(target))
-				if(target.stat == 0)
+				if(target.stat == CONSCIOUS)
 					to_chat(user, "<span class='warning'>The monkey is struggling far too much to put it in the recycler.</span>")
 				else
 					user.drop_item()
 					qdel(target)
+					target = null //we sleep in this proc, clear reference NOW
 					to_chat(user, "<span class='notice'>You stuff the monkey in the machine.</span>")
 					playsound(loc, 'sound/machines/juicer.ogg', 50, 1)
 					var/offset = prob(50) ? -2 : 2

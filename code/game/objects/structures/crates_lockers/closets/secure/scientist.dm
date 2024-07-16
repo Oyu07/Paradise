@@ -7,8 +7,8 @@
 /obj/structure/closet/secure_closet/scientist/populate_contents()
 	new /obj/item/storage/backpack/science(src)
 	new /obj/item/storage/backpack/satchel_tox(src)
-	new /obj/item/clothing/under/rank/scientist(src)
-	new /obj/item/clothing/under/rank/scientist/skirt(src)
+	new /obj/item/clothing/under/rank/rnd/scientist(src)
+	new /obj/item/clothing/under/rank/rnd/scientist/skirt(src)
 	//new /obj/item/clothing/suit/labcoat/science(src)
 	new /obj/item/clothing/suit/storage/labcoat/science(src)
 	new /obj/item/clothing/shoes/white(src)
@@ -21,21 +21,23 @@
 /obj/structure/closet/secure_closet/roboticist
 	name = "roboticist's locker"
 	req_access = list(ACCESS_ROBOTICS)
-	icon_state = "science"
-	open_door_sprite = "white_secure_door"
+	icon_state = "robotics"
+	open_door_sprite = "robotics_door"
 
 /obj/structure/closet/secure_closet/roboticist/populate_contents()
-	new /obj/item/storage/backpack(src)
-	new /obj/item/storage/backpack(src)
-	new /obj/item/storage/backpack/satchel_norm(src)
-	new /obj/item/storage/backpack/satchel_norm(src)
-	new /obj/item/storage/backpack/duffel(src)
-	new /obj/item/storage/backpack/duffel(src)
-	new /obj/item/clothing/suit/storage/labcoat(src)
-	new /obj/item/clothing/suit/storage/labcoat(src)
+	new /obj/item/mod/core/standard(src)
+	new /obj/item/storage/backpack/robotics(src)
+	new /obj/item/storage/backpack/robotics(src)
+	new /obj/item/storage/backpack/satchel_robo(src)
+	new /obj/item/storage/backpack/satchel_robo(src)
+	new /obj/item/storage/backpack/duffel/robotics(src)
+	new /obj/item/storage/backpack/duffel/robotics(src)
+	new /obj/item/clothing/suit/storage/labcoat/roboblack(src)
+	new /obj/item/clothing/suit/storage/labcoat/robowhite(src)
 	new /obj/item/radio/headset/headset_sci(src)
 	new /obj/item/radio/headset/headset_sci(src)
 	new /obj/item/radio/headset/headset_sci(src)
+
 
 /obj/structure/closet/secure_closet/RD
 	name = "research director's locker"
@@ -55,10 +57,10 @@
 	new /obj/item/flash(src)
 	new /obj/item/laser_pointer(src)
 	new /obj/item/door_remote/research_director(src)
-	new /obj/item/reagent_containers/food/drinks/mug/rd(src)
+	new /obj/item/reagent_containers/drinks/mug/rd(src)
 	new /obj/item/organ/internal/cyberimp/eyes/hud/diagnostic(src)
 	new /obj/item/clothing/accessory/medal/science(src)
-	new /obj/item/clothing/glasses/welding/superior(src)
+
 
 /obj/structure/closet/secure_closet/research_reagents
 	name = "research chemical storage closet"

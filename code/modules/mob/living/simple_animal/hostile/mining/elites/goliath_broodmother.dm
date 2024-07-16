@@ -50,25 +50,25 @@
 
 /datum/action/innate/elite_attack/tentacle_patch
 	name = "Tentacle Patch"
-	button_icon_state = "tentacle_patch"
+	button_overlay_icon_state = "tentacle_patch"
 	chosen_message = "<span class='boldwarning'>You are now attacking with a patch of tentacles.</span>"
 	chosen_attack_num = TENTACLE_PATCH
 
 /datum/action/innate/elite_attack/spawn_children
 	name = "Spawn Children"
-	button_icon_state = "spawn_children"
+	button_overlay_icon_state = "spawn_children"
 	chosen_message = "<span class='boldwarning'>You will spawn two children at your location to assist you in combat.  You can have up to 8.</span>"
 	chosen_attack_num = SPAWN_CHILDREN
 
 /datum/action/innate/elite_attack/rage
 	name = "Rage"
-	button_icon_state = "rage"
+	button_overlay_icon_state = "rage"
 	chosen_message = "<span class='boldwarning'>You will temporarily increase your movement speed.</span>"
 	chosen_attack_num = RAGE
 
 /datum/action/innate/elite_attack/call_children
 	name = "Call Children"
-	button_icon_state = "call_children"
+	button_overlay_icon_state = "call_children"
 	chosen_message = "<span class='boldwarning'>You will summon your children to your location.</span>"
 	chosen_attack_num = CALL_CHILDREN
 
@@ -143,7 +143,7 @@
 	color = "#FF0000"
 	speed = 0
 	move_to_delay = 3
-	addtimer(CALLBACK(src, .proc/reset_rage), 65)
+	addtimer(CALLBACK(src, PROC_REF(reset_rage)), 5 SECONDS)
 
 /mob/living/simple_animal/hostile/asteroid/elite/broodmother/proc/reset_rage()
 	color = "#FFFFFF"
@@ -159,7 +159,7 @@
 		var/turf/T = get_step(src, spawndir)
 		if(T)
 			child.forceMove(T)
-			child.revive() // at most this is a 29 hp heal.
+			child.revive() // at most this is a 49 hp heal.
 			playsound(src, 'sound/effects/bamf.ogg', 100, 1)
 
 //The goliath's children.  Pretty weak, simple mobs which are able to put a single tentacle under their target when at range.
@@ -172,10 +172,11 @@
 	icon_aggro = "goliath_baby"
 	icon_dead = "goliath_baby_dead"
 	icon_gib = "syndicate_gib"
-	maxHealth = 30
-	health = 30
-	melee_damage_lower = 5
-	melee_damage_upper = 5
+	maxHealth = 50
+	health = 50
+	melee_damage_lower = 12.5
+	melee_damage_upper = 12.5
+	armour_penetration_percentage = 50
 	attacktext = "bashes against"
 	attack_sound = 'sound/weapons/punch1.ogg'
 	throw_message = "does nothing to the rocky hide of the"
@@ -221,17 +222,18 @@
 			continue
 		visible_message("<span class='danger'>[src] grabs hold of [L]!</span>")
 		L.Stun(1 SECONDS)
+		L.KnockDown(2.5 SECONDS)
 		L.adjustBruteLoss(rand(20,25))
 		latched = TRUE
 	if(!latched)
 		retract()
 	else
 		deltimer(timerid)
-		timerid = addtimer(CALLBACK(src, .proc/retract), 1 SECONDS, TIMER_STOPPABLE)
+		timerid = addtimer(CALLBACK(src, PROC_REF(retract)), 1 SECONDS, TIMER_STOPPABLE)
 
 /obj/effect/temp_visual/goliath_tentacle/broodmother/patch/Initialize(mapload, new_spawner)
 	. = ..()
-	INVOKE_ASYNC(src, .proc/createpatch)
+	INVOKE_ASYNC(src, PROC_REF(createpatch))
 
 /obj/effect/temp_visual/goliath_tentacle/broodmother/patch/proc/createpatch()
 	var/tentacle_locs = spiral_range_turfs(1, get_turf(src))
@@ -273,7 +275,7 @@
 		return
 	living_user.weather_immunities += "lava"
 	to_chat(living_user, "<b>You squeeze the tongue, and some transluscent liquid shoots out all over you.</b>")
-	addtimer(CALLBACK(src, .proc/remove_lava, living_user), 20 SECONDS)
+	addtimer(CALLBACK(src, PROC_REF(remove_lava), living_user), 20 SECONDS)
 	use_time = world.time + 60 SECONDS
 
 /obj/item/crusher_trophy/broodmother_tongue/proc/remove_lava(mob/living/user)

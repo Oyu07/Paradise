@@ -2,7 +2,7 @@
 	var/current_paint
 
 /datum/component/spraycan_paintable/Initialize()
-	RegisterSignal(parent, COMSIG_PARENT_ATTACKBY, .proc/Repaint)
+	RegisterSignal(parent, COMSIG_PARENT_ATTACKBY, PROC_REF(Repaint))
 
 /datum/component/spraycan_paintable/Destroy()
 	RemoveCurrentCoat()
@@ -27,5 +27,5 @@
 	current_paint = colour
 	var/atom/A = parent
 	A.add_atom_colour(colour, FIXED_COLOUR_PRIORITY)
-	playsound(spraycan, 'sound/effects/spray.ogg', 5, 1, 5)
+	playsound(spraycan, 'sound/effects/spray.ogg', 5, TRUE, 5)
 	to_chat(user, "<span class='notice'>You spray [spraycan] on [A], painting it.</span>")

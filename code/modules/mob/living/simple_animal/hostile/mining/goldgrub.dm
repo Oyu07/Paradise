@@ -27,7 +27,7 @@
 	status_flags = CANPUSH
 	search_objects = 1
 	wanted_objects = list(/obj/item/stack/ore/diamond, /obj/item/stack/ore/gold, /obj/item/stack/ore/silver,
-						  /obj/item/stack/ore/uranium)
+						/obj/item/stack/ore/uranium)
 
 	var/chase_time = 100
 	var/will_burrow = TRUE
@@ -42,7 +42,7 @@
 /mob/living/simple_animal/hostile/asteroid/goldgrub/GiveTarget(new_target)
 	target = new_target
 	if(target != null)
-		if(istype(target, /obj/item/stack/ore) && loot.len < 10)
+		if(istype(target, /obj/item/stack/ore) && length(loot) < 10)
 			visible_message("<span class='notice'>[src] looks at [target.name] with hungry eyes.</span>")
 		else if(isliving(target))
 			Aggro()
@@ -50,7 +50,7 @@
 			retreat_distance = 10
 			minimum_distance = 10
 			if(will_burrow)
-				addtimer(CALLBACK(src, .proc/Burrow), chase_time)
+				addtimer(CALLBACK(src, PROC_REF(Burrow)), chase_time)
 
 /mob/living/simple_animal/hostile/asteroid/goldgrub/AttackingTarget()
 	if(istype(target, /obj/item/stack/ore))
@@ -68,11 +68,13 @@
 	visible_message("<span class='notice'>The ore was swallowed whole!</span>")
 
 /mob/living/simple_animal/hostile/asteroid/goldgrub/proc/Burrow()//Begin the chase to kill the goldgrub in time
-	if(!stat)
+	if(stat == CONSCIOUS)
 		visible_message("<span class='danger'>[src] buries into the ground, vanishing from sight!</span>")
 		qdel(src)
 
 /mob/living/simple_animal/hostile/asteroid/goldgrub/bullet_act(obj/item/projectile/P)
+	if(P.armour_penetration_flat + P.armour_penetration_percentage >= 100)
+		return ..()
 	visible_message("<span class='danger'>[P.name] was repelled by [name]'s girth!</span>")
 
 /mob/living/simple_animal/hostile/asteroid/goldgrub/adjustHealth(amount, updating_health = TRUE)

@@ -92,22 +92,19 @@
 		. += "The charge meter reads [round(percent() )]%."
 
 /obj/item/stock_parts/cell/suicide_act(mob/user)
-	to_chat(viewers(user), "<span class='suicide'>[user] is licking the electrodes of [src]! It looks like [user.p_theyre()] trying to commit suicide.</span>")
+	to_chat(viewers(user), "<span class='suicide'>[user] is licking the electrodes of [src]! It looks like [user.p_theyre()] trying to commit suicide!</span>")
 	return FIRELOSS
 
 /obj/item/stock_parts/cell/attackby(obj/item/W, mob/user, params)
 	if(istype(W, /obj/item/reagent_containers/syringe))
 		var/obj/item/reagent_containers/syringe/S = W
 
-		to_chat(user, "You inject the solution into the power cell.")
-
 		if(S.reagents.has_reagent("plasma", 5) || S.reagents.has_reagent("plasma_dust", 5))
-
+			to_chat(user, "You inject the solution into the power cell.")
 			rigged = TRUE
 
 			log_admin("LOG: [key_name(user)] injected a power cell with plasma, rigging it to explode.")
 			message_admins("LOG: [key_name_admin(user)] injected a power cell with plasma, rigging it to explode.")
-
 		S.reagents.clear_reagents()
 	else
 		return ..()
@@ -117,6 +114,7 @@
 	var/turf/T = get_turf(loc)
 	if(charge == 0)
 		return
+
 	var/devastation_range = -1 //round(charge/11000)
 	var/heavy_impact_range = round(sqrt(charge) / 60)
 	var/light_impact_range = round(sqrt(charge) / 30)
@@ -210,17 +208,20 @@
 	name = "\improper X-01 multiphase energy gun power cell"
 	maxcharge = 1200
 
-/obj/item/stock_parts/cell/pulse //200 pulse shots
+/// 200 pulse shots
+/obj/item/stock_parts/cell/pulse
 	name = "pulse rifle power cell"
 	maxcharge = 40000
 	rating = 3
 	chargerate = 1500
 
-/obj/item/stock_parts/cell/pulse/carbine //25 pulse shots
+/// 25 pulse shots
+/obj/item/stock_parts/cell/pulse/carbine
 	name = "pulse carbine power cell"
 	maxcharge = 5000
 
-/obj/item/stock_parts/cell/pulse/pistol //10 pulse shots
+/// 10 pulse shots
+/obj/item/stock_parts/cell/pulse/pistol
 	name = "pulse pistol power cell"
 	maxcharge = 2000
 
@@ -370,7 +371,8 @@
 	maxcharge = 40000
 	chargerate = 2600 // about 30 seconds to charge with a default recharger
 
-/obj/item/stock_parts/cell/emproof/reactive // EMP proof so emp_act does not double dip.
+/// EMP proof so emp_act does not double dip.
+/obj/item/stock_parts/cell/emproof/reactive
 	name = "reactive armor power cell"
 	desc = "A cell used to power reactive armors."
 	maxcharge = 2400

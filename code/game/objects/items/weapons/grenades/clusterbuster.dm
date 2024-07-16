@@ -2,7 +2,7 @@
 //Clusterbang
 ////////////////////
 /obj/item/grenade/clusterbuster
-	desc = "Use of this weapon may constiute a war crime in your area, consult your local captain."
+	desc = "Use of this weapon may constitute a war crime in your area, consult your local captain."
 	name = "clusterbang"
 	icon = 'icons/obj/grenade.dmi'
 	icon_state = "clusterbang"
@@ -24,7 +24,7 @@
 
 	new /obj/effect/payload_spawner(loc, payload, numspawned)//Launches payload
 
-	playsound(loc, 'sound/weapons/armbomb.ogg', 75, 1, -3)
+	playsound(loc, 'sound/weapons/armbomb.ogg', 75, TRUE, -3)
 
 	qdel(src)
 
@@ -52,7 +52,7 @@
 
 	new /obj/effect/payload_spawner(loc, payload, rand(4,8))
 
-	playsound(loc, 'sound/weapons/armbomb.ogg', 75, 1, -3)
+	playsound(loc, 'sound/weapons/armbomb.ogg', 75, TRUE, -3)
 
 	qdel(src)
 
@@ -84,10 +84,6 @@
 	name = "Electromagnetic Storm"
 	payload = /obj/item/grenade/empgrenade
 
-/obj/item/grenade/clusterbuster/smoke
-	name = "Ninja Vanish"
-	payload = /obj/item/grenade/smokebomb
-
 /obj/item/grenade/clusterbuster/metalfoam
 	name = "Instant Concrete"
 	payload = /obj/item/grenade/chem_grenade/metalfoam
@@ -96,17 +92,9 @@
 	name = "Inferno"
 	payload = /obj/item/grenade/chem_grenade/incendiary
 
-/obj/item/grenade/clusterbuster/antiweed
-	name = "RoundDown"
-	payload = /obj/item/grenade/chem_grenade/antiweed
-
 /obj/item/grenade/clusterbuster/cleaner
 	name = "Mr. Proper"
 	payload = /obj/item/grenade/chem_grenade/cleaner
-
-/obj/item/grenade/clusterbuster/teargas
-	name = "\improper Oignon Teargas Grenade"
-	payload = /obj/item/grenade/chem_grenade/teargas
 
 /obj/item/grenade/clusterbuster/facid
 	name = "Aciding Rain"
@@ -132,10 +120,6 @@
 	name = "\improper Mega Meat Grenade"
 	payload = /obj/item/grenade/chem_grenade/meat
 
-/obj/item/grenade/clusterbuster/nervegas
-	name = "\improper Nerve Gas Clusterbomb"
-	payload = /obj/item/grenade/chem_grenade/saringas
-
 /obj/item/grenade/clusterbuster/megadirt
 	name = "\improper Megamaid's Revenge Grenade"
 	payload = /obj/item/grenade/chem_grenade/dirt
@@ -150,24 +134,14 @@
 	desc = "An object in motion remains in motion."
 	payload = /obj/item/grenade/chem_grenade/lube
 
-/obj/item/grenade/clusterbuster/hippie
-	name = "\improper Hippie Grenade"
-	desc = "Almost as good as the summer of '69."
-	payload = /obj/item/grenade/chem_grenade/drugs
-
 /obj/item/grenade/clusterbuster/holy
 	name = "\improper Purification Grenade"
 	desc = "Blessed excessively."
 	payload = /obj/item/grenade/chem_grenade/holywater
 
-/obj/item/grenade/clusterbuster/hellwater
-	name = "Righteous Fury"
-	desc = "It's righteous, not badminnery."
-	payload = /obj/item/grenade/chem_grenade/hellwater
-
 /obj/item/grenade/clusterbuster/booze
 	name = "\improper Booze Grenade"
-	payload = /obj/item/reagent_containers/food/drinks/bottle/random_drink
+	payload = /obj/item/reagent_containers/drinks/bottle/random_drink
 
 /obj/item/grenade/clusterbuster/honk
 	name = "\improper Mega Honk Grenade"
@@ -196,14 +170,14 @@
 	payload = /obj/singularity
 
 /obj/item/grenade/clusterbuster/tools
-	name = "\improper Quick Repair Grenade"
-	desc = "An assistant's every dream."
-	payload = /obj/random/tool
-
-/obj/item/grenade/clusterbuster/tools
 	name = "\improper Engineering Deployment Platfom"
 	desc = "For the that time when gearing up was just too hard."
 	payload = /obj/random/tech_supply
+
+/obj/item/grenade/clusterbuster/tide
+	name = "\improper Quick Repair Grenade"
+	desc = "An assistant's every dream."
+	payload = /obj/random/tool
 
 /obj/item/grenade/clusterbuster/toys
 	name = "\improper Toy Delivery System"
@@ -252,6 +226,16 @@
 	name = "\improper N2O Cluster Grenade"
 	desc = "For when you need to knock out EVERYONE."
 	payload = /obj/item/grenade/gas/knockout
+
+/obj/item/grenade/clusterbuster/ied
+	name = "\improper IED Cluster Grenade"
+	desc = "For when you need to do something between everything and nothing."
+	payload = /obj/item/grenade/iedcasing
+
+/obj/item/grenade/clusterbuster/tar
+	name = "\improper Sticky Tar Cluster Grenade"
+	desc = "Speed limit enforced by goop."
+	payload = /obj/item/grenade/chem_grenade/tar
 
 ////////////Clusterbuster of Clusterbusters////////////
 //As a note: be extrodinarily careful about make the payload clusterbusters as it can quickly destroy the MC/Server

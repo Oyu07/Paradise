@@ -7,11 +7,10 @@
 	skinned_type = /obj/item/stack/sheet/fur
 	unarmed_type = /datum/unarmed_attack/claws
 
-	blurb = "The Tajaran race is a species of feline-like bipeds hailing from the planet of Ahdomai in the \
-	S'randarr system. They have been brought up into the space age by the Humans and Skrell, and have been \
-	influenced heavily by their long history of Slavemaster rule. They have a structured, clan-influenced way \
-	of family and politics. They prefer colder environments, and speak a variety of languages, mostly Siik'Maas, \
-	using unique inflections their mouths form."
+	blurb = "Tajaran hail from the mineral-rich arctic moon of Ahdomai. \
+	They were introduced into the galactic scene after the Skrellian discovery and were elevated to be associates to the Solar-Central Compact.<br/><br/> \
+	The teachings of S'randarr and solar iconography dominate their religious practices, \
+	and Tajaran often speak in the third person due to the lack of first-person references in their native tongue."
 
 	cold_level_1 = 240
 	cold_level_2 = 180
@@ -42,16 +41,20 @@
 		"brain" =    /obj/item/organ/internal/brain/tajaran,
 		"appendix" = /obj/item/organ/internal/appendix,
 		"eyes" =     /obj/item/organ/internal/eyes/tajaran /*Most Tajara see in full colour as a result of genetic augmentation, although it cost them their darksight (darksight = 2)
-															 unless they choose otherwise by selecting the colourblind disability in character creation (darksight = 8 but colourblind).*/
+															unless they choose otherwise by selecting the colourblind disability in character creation (darksight = 8 but colourblind).*/
 		)
 
-	allowed_consumed_mobs = list(/mob/living/simple_animal/mouse, /mob/living/simple_animal/chick, /mob/living/simple_animal/butterfly, /mob/living/simple_animal/parrot)
+	allowed_consumed_mobs = list(/mob/living/simple_animal/mouse, /mob/living/simple_animal/chick, /mob/living/simple_animal/butterfly, /mob/living/simple_animal/parrot, /mob/living/simple_animal/hostile/poison/bees)
 
 	suicide_messages = list(
 		"is attempting to bite their tongue off!",
 		"is jamming their claws into their eye sockets!",
 		"is twisting their own neck!",
 		"is holding their breath!")
+	autohiss_basic_map = list(
+			"r" = list("rr", "rrr", "rrrr")
+		)
+	autohiss_exempt = list("Siik'tajr")
 
 /datum/species/tajaran/handle_death(gibbed, mob/living/carbon/human/H)
 	H.stop_tail_wagging()

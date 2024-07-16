@@ -5,7 +5,7 @@
 	icon_state = "seed-cocoapod"
 	species = "cocoapod"
 	plantname = "Cocao Tree"
-	product = /obj/item/reagent_containers/food/snacks/grown/cocoapod
+	product = /obj/item/food/snacks/grown/cocoapod
 	lifespan = 20
 	maturation = 5
 	production = 5
@@ -18,12 +18,12 @@
 	mutatelist = list(/obj/item/seeds/cocoapod/vanillapod)
 	reagents_add = list("cocoa" = 0.25, "plantmatter" = 0.1)
 
-/obj/item/reagent_containers/food/snacks/grown/cocoapod
+/obj/item/food/snacks/grown/cocoapod
 	seed = /obj/item/seeds/cocoapod
 	name = "cocoa pod"
 	desc = "Fattening... Mmmmm... chucklate."
 	icon_state = "cocoapod"
-	filling_color = "#FFD700"
+	filling_color = "#5F3A13"
 	bitesize_mod = 2
 	tastes = list("cocoa" = 1)
 
@@ -34,16 +34,16 @@
 	icon_state = "seed-vanillapod"
 	species = "vanillapod"
 	plantname = "Vanilla Tree"
-	product = /obj/item/reagent_containers/food/snacks/grown/vanillapod
+	product = /obj/item/food/snacks/grown/vanillapod
 	genes = list(/datum/plant_gene/trait/repeated_harvest)
 	mutatelist = list()
 	reagents_add = list("vanilla" = 0.25, "plantmatter" = 0.1)
 
-/obj/item/reagent_containers/food/snacks/grown/vanillapod
+/obj/item/food/snacks/grown/vanillapod
 	seed = /obj/item/seeds/cocoapod/vanillapod
 	name = "vanilla pod"
 	desc = "Fattening... Mmmmm... vanilla."
 	icon_state = "vanillapod"
-	filling_color = "#FFD700"
+	filling_color = "#FEFEFE"
 	tastes = list("vanilla" = 1)
 	distill_reagent = "vanilla" //Takes longer, but you can get even more vanilla from it.

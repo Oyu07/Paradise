@@ -1,15 +1,17 @@
 /datum/martial_art/krav_maga
 	name = "Krav Maga"
+	weight = 7 //Higher weight, since you can choose to put on or take off the gloves
 	var/datum/action/neck_chop/neckchop = new/datum/action/neck_chop()
 	var/datum/action/leg_sweep/legsweep = new/datum/action/leg_sweep()
 	var/datum/action/lung_punch/lungpunch = new/datum/action/lung_punch()
 	var/datum/action/neutral_stance/neutral = new/datum/action/neutral_stance()
+	can_horizontally_grab = FALSE
 
 /datum/action/neutral_stance
 	name = "Neutral Stance - You relax, cancelling your last Krav Maga stance attack."
-	button_icon_state = "neutralstance"
+	button_overlay_icon_state = "neutralstance"
 
-/datum/action/neutral_stance/Trigger()
+/datum/action/neutral_stance/Trigger(left_click)
 	var/mob/living/carbon/human/H = owner
 	if(!H.mind.martial_art.in_stance)
 		to_chat(owner, "<b><i>You cannot cancel an attack you haven't prepared!</i></b>")
@@ -21,24 +23,31 @@
 
 /datum/action/neck_chop
 	name = "Neck Chop - Injures the neck, stopping the victim from speaking for a while."
-	button_icon_state = "neckchop"
+	button_overlay_icon_state = "neckchop"
 
-/datum/action/neck_chop/Trigger()
+/datum/action/neck_chop/Trigger(left_click)
+	var/mob/living/carbon/human/H = owner //This is a janky solution, but I want to refactor krav anyway and un-jank this (written in may 2023)
+	if(!istype(H.mind.martial_art, /datum/martial_art/krav_maga))
+		to_chat(owner, "<span class='warning'>You don't know how to do that right now.</span>")
+		return
 	if(owner.incapacitated())
 		to_chat(owner, "<span class='warning'>You can't use Krav Maga while you're incapacitated.</span>")
 		return
 	to_chat(owner, "<b><i>Your next attack will be a Neck Chop.</i></b>")
 	owner.visible_message("<span class='danger'>[owner] assumes the Neck Chop stance!</span>")
-	var/mob/living/carbon/human/H = owner
 	H.mind.martial_art.combos.Cut()
 	H.mind.martial_art.combos.Add(/datum/martial_combo/krav_maga/neck_chop)
 	H.mind.martial_art.reset_combos()
 	H.mind.martial_art.in_stance = TRUE
 /datum/action/leg_sweep
 	name = "Leg Sweep - Trips the victim, rendering them prone and unable to move for a short time."
-	button_icon_state = "legsweep"
+	button_overlay_icon_state = "legsweep"
 
-/datum/action/leg_sweep/Trigger()
+/datum/action/leg_sweep/Trigger(left_click)
+	var/mob/living/carbon/human/H = owner
+	if(!istype(H.mind.martial_art, /datum/martial_art/krav_maga))
+		to_chat(owner, "<span class='warning'>You don't know how to do that right now.</span>")
+		return
 	if(owner.incapacitated())
 		to_chat(owner, "<span class='warning'>You can't use Krav Maga while you're incapacitated.</span>")
 		return
@@ -47,7 +56,6 @@
 		return
 	to_chat(owner, "<b><i>Your next attack will be a Leg Sweep.</i></b>")
 	owner.visible_message("<span class='danger'>[owner] assumes the Leg Sweep stance!</span>")
-	var/mob/living/carbon/human/H = owner
 	H.mind.martial_art.combos.Cut()
 	H.mind.martial_art.combos.Add(/datum/martial_combo/krav_maga/leg_sweep)
 	H.mind.martial_art.reset_combos()
@@ -55,15 +63,18 @@
 
 /datum/action/lung_punch//referred to internally as 'quick choke'
 	name = "Lung Punch - Delivers a strong punch just above the victim's abdomen, constraining the lungs. The victim will be unable to breathe for a short time."
-	button_icon_state = "lungpunch"
+	button_overlay_icon_state = "lungpunch"
 
-/datum/action/lung_punch/Trigger()
+/datum/action/lung_punch/Trigger(left_click)
+	var/mob/living/carbon/human/H = owner
+	if(!istype(H.mind.martial_art, /datum/martial_art/krav_maga))
+		to_chat(owner, "<span class='warning'>You don't know how to do that right now.</span>")
+		return
 	if(owner.incapacitated())
 		to_chat(owner, "<span class='warning'>You can't use Krav Maga while you're incapacitated.</span>")
 		return
 	to_chat(owner, "<b><i>Your next attack will be a Lung Punch.</i></b>")
 	owner.visible_message("<span class='danger'>[owner] assumes the Lung Punch stance!</span>")
-	var/mob/living/carbon/human/H = owner
 	H.mind.martial_art.combos.Cut()
 	H.mind.martial_art.combos.Add(/datum/martial_combo/krav_maga/lung_punch)
 	H.mind.martial_art.reset_combos()
@@ -97,15 +108,15 @@
 	if(IS_HORIZONTAL(D))
 		bonus_damage += 5
 		picked_hit_type = "stomps on"
-	D.apply_damage(bonus_damage, BRUTE)
-	if(picked_hit_type == "kicks" || picked_hit_type == "stomps")
+	if(picked_hit_type == "kicks" || IS_HORIZONTAL(D))
 		A.do_attack_animation(D, ATTACK_EFFECT_KICK)
-		playsound(get_turf(D), 'sound/effects/hit_kick.ogg', 50, 1, -1)
+		playsound(get_turf(D), 'sound/effects/hit_kick.ogg', 50, TRUE, -1)
 	else
 		A.do_attack_animation(D, ATTACK_EFFECT_PUNCH)
-		playsound(get_turf(D), 'sound/effects/hit_punch.ogg', 50, 1, -1)
+		playsound(get_turf(D), 'sound/effects/hit_punch.ogg', 50, TRUE, -1)
 	D.visible_message("<span class='danger'>[A] [picked_hit_type] [D]!</span>", \
-					  "<span class='userdanger'>[A] [picked_hit_type] you!</span>")
+					"<span class='userdanger'>[A] [picked_hit_type] you!</span>")
+	D.apply_damage(bonus_damage, BRUTE)
 	return TRUE
 
 /datum/martial_art/krav_maga/disarm_act(mob/living/carbon/human/A, mob/living/carbon/human/D)
@@ -121,39 +132,48 @@
 	else
 		D.visible_message("<span class='danger'>[A] attempted to disarm [D]!</span>", \
 							"<span class='userdanger'>[A] attempted to disarm [D]!</span>")
-		playsound(D, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
+		playsound(D, 'sound/weapons/punchmiss.ogg', 25, TRUE, -1)
 	return TRUE
 
 //Krav Maga Gloves
 
 /obj/item/clothing/gloves/color/black/krav_maga
-	var/datum/martial_art/krav_maga/style = new
+	var/datum/martial_art/krav_maga/style
 	can_be_cut = FALSE
 	resistance_flags = NONE
+
+/obj/item/clothing/gloves/color/black/krav_maga/Initialize()
+	. = ..()
+	style = new()
 
 /obj/item/clothing/gloves/color/black/krav_maga/equipped(mob/user, slot)
 	if(!ishuman(user))
 		return
-	if(slot == slot_gloves)
+	if(slot == SLOT_HUD_GLOVES)
 		var/mob/living/carbon/human/H = user
-		style.teach(H,1)
+		style.teach(H, TRUE)
 
 /obj/item/clothing/gloves/color/black/krav_maga/dropped(mob/user)
 	..()
 	if(!ishuman(user))
 		return
 	var/mob/living/carbon/human/H = user
-	if(H.get_item_by_slot(slot_gloves) == src)
+	if(H.get_item_by_slot(SLOT_HUD_GLOVES) == src)
 		style.remove(H)
 
 /obj/item/clothing/gloves/color/black/krav_maga/sec//more obviously named, given to sec
-	name = "krav maga gloves"
+	name = "Krav Maga gloves"
 	desc = "These gloves can teach you to perform Krav Maga using nanochips."
 	icon_state = "fightgloves"
 	item_state = "fightgloves"
 
-/obj/item/clothing/gloves/color/black/krav_maga/combat // for nukies
-	name = "combat gloves plus"
+/obj/item/clothing/gloves/color/black/krav_maga/sec/Initialize(mapload)
+	. = ..()
+	RegisterSignal(src, COMSIG_PARENT_QDELETING, PROC_REF(alert_admins_on_destroy))
+
+/// for nukies
+/obj/item/clothing/gloves/color/black/krav_maga/combat
+	name = "Combat gloves plus"
 	desc = "These combat gloves have been upgraded with nanochips that teach the wearer Krav Maga."
 	icon_state = "combat"
 	item_state = "swat_gl"
@@ -165,4 +185,4 @@
 	heat_protection = HANDS
 	max_heat_protection_temperature = GLOVES_MAX_TEMP_PROTECT
 	resistance_flags = NONE
-	armor = list(MELEE = 0, BULLET = 0, LASER = 0, ENERGY = 0, BOMB = 0, BIO = 0, RAD = 0, FIRE = 200, ACID = 50)
+	armor = list(MELEE = 0, BULLET = 0, LASER = 0, ENERGY = 0, BOMB = 0, RAD = 0, FIRE = 200, ACID = 50)

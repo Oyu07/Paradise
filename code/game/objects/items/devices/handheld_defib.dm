@@ -1,7 +1,7 @@
 /obj/item/handheld_defibrillator
 	name = "handheld defibrillator"
 	desc = "Used to restart stopped hearts."
-	icon = 'icons/obj/items.dmi'
+	icon = 'icons/obj/medical.dmi'
 	lefthand_file = 'icons/mob/inhands/items_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/items_righthand.dmi'
 	icon_state = "defib-on"
@@ -24,11 +24,13 @@
 		desc += " The screen only shows the word KILL flashing over and over."
 		if(user)
 			to_chat(user, "<span class='warning'>you short out the safeties on [src]</span>")
+		return TRUE
 	else
 		emagged = FALSE
 		desc = "Used to restart stopped hearts."
 		if(user)
 			to_chat(user, "<span class='warning'>You restore the safeties on [src]</span>")
+		return TRUE
 
 /obj/item/handheld_defibrillator/attack(mob/living/carbon/human/H, mob/user)
 	if(!istype(H))
@@ -45,22 +47,22 @@
 
 		user.visible_message("<span class='danger'>[user] violently shocks [H] with [src]!</span>", "<span class='danger'>You violently shock [H] with [src]!</span>")
 		add_attack_logs(user, H, "emag-defibbed with [src]")
-		playsound(user.loc, "sound/weapons/Egloves.ogg", 75, 1)
+		playsound(user.loc, "sound/weapons/egloves.ogg", 75, 1)
 		H.KnockDown(knockdown_duration)
-		H.adjustStaminaLoss(60)
+		H.apply_damage(60, STAMINA)
 		SEND_SIGNAL(H, COMSIG_LIVING_MINOR_SHOCK, 100)
 		ADD_TRAIT(H, TRAIT_WAS_BATONNED, user_UID)
 		cooldown = TRUE
 		icon_state = "[icon_base]-shock"
-		addtimer(CALLBACK(src, .proc/allowhit, H, user_UID), attack_cooldown)
-		addtimer(CALLBACK(src, .proc/short_charge), 1 SECONDS)
-		addtimer(CALLBACK(src, .proc/recharge), charge_time)
+		addtimer(CALLBACK(src, PROC_REF(allowhit), H, user_UID), attack_cooldown)
+		addtimer(CALLBACK(src, PROC_REF(short_charge)), 1 SECONDS)
+		addtimer(CALLBACK(src, PROC_REF(recharge)), charge_time)
 		return
 
 	if((H.health <= HEALTH_THRESHOLD_CRIT) || (H.undergoing_cardiac_arrest()))
 		user.visible_message("<span class='notice'>[user] shocks [H] with [src].</span>", "<span class='notice'>You shock [H] with [src].</span>")
 		add_attack_logs(user, H, "defibrillated with [src]")
-		playsound(user.loc, "sound/weapons/Egloves.ogg", 75, 1)
+		playsound(user.loc, "sound/weapons/egloves.ogg", 75, 1)
 
 		if(H.stat == DEAD)
 			to_chat(user, "<span class='danger'>[H] doesn't respond at all!</span>")
@@ -84,8 +86,8 @@
 
 		cooldown = TRUE
 		icon_state = "[icon_base]-shock"
-		addtimer(CALLBACK(src, .proc/short_charge), 1 SECONDS)
-		addtimer(CALLBACK(src, .proc/recharge), charge_time)
+		addtimer(CALLBACK(src, PROC_REF(short_charge)), 1 SECONDS)
+		addtimer(CALLBACK(src, PROC_REF(recharge)), charge_time)
 
 	else
 		to_chat(user, "<span class='notice'>[src]'s on board medical scanner indicates that no shock is required.</span>")

@@ -4,7 +4,7 @@
 	desc = "A small, easily concealable 10mm handgun. Has a threaded barrel for suppressors."
 	icon_state = "pistol"
 	w_class = WEIGHT_CLASS_SMALL
-	origin_tech = "combat=3;materials=2;syndicate=4"
+	origin_tech = "combat=3;materials=2;syndicate=3"
 	can_holster = TRUE
 	mag_type = /obj/item/ammo_box/magazine/m10mm
 	fire_sound = 'sound/weapons/gunshots/gunshot_pistol.ogg'
@@ -13,6 +13,7 @@
 	can_suppress = TRUE
 	burst_size = 1
 	fire_delay = 0
+	execution_speed = 4 SECONDS
 	actions_types = list()
 
 /obj/item/gun/projectile/automatic/pistol/update_icon_state()
@@ -29,8 +30,8 @@
 
 //Enforcer//
 /obj/item/gun/projectile/automatic/pistol/enforcer
-	name = "\improper Enforcer"
-	desc = "A pistol of modern design."
+	name = "\improper NF10 'Enforcer' pistol"
+	desc = "A 9mm sidearm commonly used by Nanotrasen Asset Protection."
 	icon_state = "enforcer_grey"
 	force = 10
 	mag_type = /obj/item/ammo_box/magazine/enforcer
@@ -48,7 +49,6 @@
 	options["Green Handle"] = "enforcer_greengrip"
 	options["Tan Handle"] = "enforcer_tangrip"
 	options["Red Handle"] = "enforcer_redgrip"
-	options["Cancel"] = null
 
 /obj/item/gun/projectile/automatic/pistol/enforcer/update_icon_state()
 	if(current_skin)

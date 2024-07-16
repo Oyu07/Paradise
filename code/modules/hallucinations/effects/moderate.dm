@@ -15,19 +15,19 @@
 	duration = list(10 SECONDS, 25 SECONDS)
 	/// The possible alerts to be displayed. Key is alert type, value is alert category.
 	var/list/alerts = list(
-		/obj/screen/alert/not_enough_oxy = "not_enough_oxy",
-		/obj/screen/alert/not_enough_tox = "not_enough_tox",
-		/obj/screen/alert/not_enough_co2 = "not_enough_co2",
-		/obj/screen/alert/not_enough_nitro = "not_enough_nitro",
-		/obj/screen/alert/too_much_oxy = "too_much_oxy",
-		/obj/screen/alert/too_much_co2 = "too_much_co2",
-		/obj/screen/alert/too_much_tox = "too_much_tox",
-		/obj/screen/alert/hunger/fat = "nutrition",
-		/obj/screen/alert/hunger/starving = "nutrition",
-		/obj/screen/alert/hot = "temp",
-		/obj/screen/alert/cold = "temp",
-		/obj/screen/alert/highpressure = "pressure",
-		/obj/screen/alert/lowpressure = "pressure",
+		/atom/movable/screen/alert/not_enough_oxy = "not_enough_oxy",
+		/atom/movable/screen/alert/not_enough_tox = "not_enough_tox",
+		/atom/movable/screen/alert/not_enough_co2 = "not_enough_co2",
+		/atom/movable/screen/alert/not_enough_nitro = "not_enough_nitro",
+		/atom/movable/screen/alert/too_much_oxy = "too_much_oxy",
+		/atom/movable/screen/alert/too_much_co2 = "too_much_co2",
+		/atom/movable/screen/alert/too_much_tox = "too_much_tox",
+		/atom/movable/screen/alert/hunger/fat = "nutrition",
+		/atom/movable/screen/alert/hunger/starving = "nutrition",
+		/atom/movable/screen/alert/hot = "temp",
+		/atom/movable/screen/alert/cold = "temp",
+		/atom/movable/screen/alert/highpressure = "pressure",
+		/atom/movable/screen/alert/lowpressure = "pressure",
 	)
 	/// Alert severities. Only needed for some alerts such as temperature or pressure. Key is alert category, value is severity.
 	var/list/severities = list(
@@ -61,11 +61,11 @@
 		"\improper ARG" = list('icons/obj/guns/projectile.dmi', "arg-30"),
 		"\improper C4" = list('icons/obj/grenade.dmi', "plastic-explosive0"),
 		"\improper L6 SAW" = list('icons/obj/guns/projectile.dmi', "l6closed100"),
-		"chainsaw" = list('icons/obj/items.dmi', "chainsaw0"),
+		"chainsaw" = list('icons/obj/weapons/melee.dmi', "chainsaw0"),
 		"combat shotgun" = list('icons/obj/guns/projectile.dmi', "cshotgun"),
-		"double-bladed energy sword" = list('icons/obj/items.dmi', "dualsaberred1"),
-		"energy sword" = list('icons/obj/items.dmi', "swordred"),
-		"fireaxe" = list('icons/obj/items.dmi', "fireaxe1"),
+		"double-bladed energy sword" = list('icons/obj/weapons/energy_melee.dmi', "dualsaberred1"),
+		"energy sword" = list('icons/obj/weapons/energy_melee.dmi', "swordred"),
+		"fireaxe" = list('icons/obj/weapons/melee.dmi', "fireaxe1"),
 		"ritual dagger" = list('icons/obj/cult.dmi', "blood_dagger"),
 		"ritual dagger" = list('icons/obj/cult.dmi', "death_dagger"),
 		"ritual dagger" = list('icons/obj/cult.dmi', "hell_dagger"),
@@ -91,7 +91,7 @@
 /obj/effect/hallucination/fake_item/attack_hand(mob/living/user)
 	if(user != target)
 		return
-	if(hasorgans(user))
+	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
 		var/obj/item/organ/external/temp = H.bodyparts_by_name["r_hand"]
 		if(user.hand)
@@ -105,7 +105,7 @@
 
 	user.Weaken(4 SECONDS)
 	user.visible_message("<span class='warning'>[user] does a grabbing motion towards [get_turf(src)] but [user.p_they()] stumble[user.p_s()] - nothing is there!</span>",
-						 "<span class='userdanger'>[src] vanishes as you try grabbing it, causing you to stumble!</span>")
+						"<span class='userdanger'>[src] vanishes as you try grabbing it, causing you to stumble!</span>")
 	qdel(src)
 
 /**
@@ -221,7 +221,7 @@
 
 /obj/effect/hallucination/tripper/chasm/on_crossed()
 	target.visible_message("<span class='warning'>[target] trips over nothing and flails on [get_turf(target)] as if they were falling!</span>",
-					  	   "<span class='userdanger'>You stumble and stare into an abyss before you. It stares back, and you fall into the enveloping dark!</span>")
+						"<span class='userdanger'>You stumble and stare into an abyss before you. It stares back, and you fall into the enveloping dark!</span>")
 
 /**
   * # Hallucination - Delamination Alarm
@@ -234,7 +234,7 @@
 /obj/effect/hallucination/delamination_alarm/Initialize(mapload, mob/living/carbon/target)
 	. = ..()
 	target.playsound_local(target, 'sound/machines/engine_alert2.ogg', 25, FALSE, 30, 30)
-	target.hear_radio(message_to_multilingual("Danger! Crystal hyperstructure integrity faltering! Integrity: [rand(30, 50)]%"), vname = "supermatter crystal", part_a = "<span class='[SSradio.frequency_span_class(PUB_FREQ)]'><b>\[[get_frequency_name(PUB_FREQ)]\]</b> <span class='name'>", part_b = "</span> <span class='message'>")
+	target.hear_radio(message_to_multilingual("<b>Danger! Crystal hyperstructure integrity faltering! Integrity: [rand(30, 50)]%</b>"), vname = "supermatter crystal", part_a = "<span class='[SSradio.frequency_span_class(PUB_FREQ)]'><b>\[[get_frequency_name(PUB_FREQ)]\]</b> <span class='name'>", part_b = "</span> <span class='message'>")
 
 /**
   * # Hallucination - Plasma Flood
@@ -267,7 +267,7 @@
 	create_plasma(T)
 	expand_queue += T
 	processed[T] = TRUE
-	expand_timer = addtimer(CALLBACK(src, .proc/expand), expand_delay, TIMER_LOOP | TIMER_STOPPABLE)
+	expand_timer = addtimer(CALLBACK(src, PROC_REF(expand)), expand_delay, TIMER_LOOP | TIMER_STOPPABLE)
 
 /obj/effect/hallucination/plasma_flood/Destroy()
 	deltimer(expand_timer)
@@ -284,9 +284,9 @@
 		var/turf/source_turf = t
 		expand_queue -= source_turf
 		// Expand to each dir
-		for(var/dir in GLOB.cardinal)
-			var/turf/target_turf = get_step(source_turf, dir)
-			if(processed[target_turf] || !source_turf.CanAtmosPass(target_turf))
+		for(var/direction in GLOB.cardinal)
+			var/turf/target_turf = get_step(source_turf, direction)
+			if(processed[target_turf] || !source_turf.CanAtmosPass(direction) || !target_turf.CanAtmosPass(turn(direction, 180)))
 				continue
 			create_plasma(target_turf)
 			expand_queue += target_turf
@@ -344,12 +344,8 @@
 /obj/effect/hallucination/stunprodding/Initialize(mapload, mob/living/carbon/target)
 	. = ..()
 
-	var/list/turfs = list()
-	for(var/turf/T in range(world.view, target))
-		turfs += T
-
-	var/turf/T = pick(turfs)
-	target.playsound_local(T, 'sound/weapons/Egloves.ogg', 25, TRUE)
+	var/turf/T = pick(RANGE_TURFS(15, target))
+	target.playsound_local(T, 'sound/weapons/egloves.ogg', 25, TRUE)
 	target.playsound_local(T, get_sfx("bodyfall"), 25, TRUE)
 	target.playsound_local(T, "sparks", 50, TRUE)
 
@@ -370,12 +366,8 @@
 /obj/effect/hallucination/energy_sword/Initialize(mapload, mob/living/carbon/target)
 	. = ..()
 
-	var/list/turfs = list()
-	for(var/turf/T in range(world.view, target))
-		turfs += T
-
-	var/turf/T = pick(turfs)
-	loc = T
+	var/turf/T = pick(RANGE_TURFS(15, target))
+	forceMove(T)
 	target.playsound_local(T, 'sound/weapons/saberon.ogg', 20, TRUE)
 
 	var/scream_sound = pick('sound/goonstation/voice/female_scream.ogg', 'sound/goonstation/voice/male_scream.ogg')
@@ -406,12 +398,8 @@
 /obj/effect/hallucination/gunfire/Initialize(mapload, mob/living/carbon/target)
 	. = ..()
 
-	var/list/turfs = list()
-	for(var/turf/T in range(world.view, target))
-		turfs += T
-
-	var/turf/T = pick(turfs)
-	loc = T
+	var/turf/T = pick(RANGE_TURFS(15, target))
+	forceMove(T)
 
 	var/gun_sound = pick('sound/weapons/gunshots/gunshot_pistol.ogg', 'sound/weapons/gunshots/gunshot_strong.ogg')
 	var/scream_sound = pick('sound/goonstation/voice/female_scream.ogg', 'sound/goonstation/voice/male_scream.ogg')
@@ -449,7 +437,7 @@
   * Returns the image to use as override to the target's appearance.
   */
 /obj/effect/hallucination/self_delusion/proc/get_image()
-	return image('icons/mob/animal.dmi', target, pick("bear", "brownbear", "corgi", "cow", "deer", "goat", "goose", "pig", "blank-body"))
+	return image('icons/mob/animal.dmi', target, pick("black_bear", "brown_bear", "corgi", "cow", "deer", "goat", "goose", "pig", "blank-body"))
 
 /**
   * # Hallucination - Delusion
@@ -478,4 +466,4 @@
   * Returns the image to use as override to the target's appearance.
   */
 /obj/effect/hallucination/delusion/proc/get_image(mob/living/carbon/human/H)
-	return image('icons/mob/animal.dmi', H, pick("bear", "brownbear", "corgi", "cow", "deer", "goat", "goose", "pig", "blank-body"))
+	return image('icons/mob/animal.dmi', H, pick("black_bear", "brown_bear", "corgi", "cow", "deer", "goat", "goose", "pig", "blank-body"))

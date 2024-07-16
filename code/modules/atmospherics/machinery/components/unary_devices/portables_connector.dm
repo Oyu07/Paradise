@@ -6,7 +6,8 @@
 	desc = "For connecting portables devices related to atmospherics control."
 
 	can_unwrench = TRUE
-	layer = GAS_FILTER_LAYER
+	layer = GAS_PIPE_VISIBLE_LAYER + GAS_FILTER_OFFSET
+	layer_offset = GAS_FILTER_OFFSET
 
 	var/obj/machinery/atmospherics/portable/connected_device
 
@@ -27,7 +28,6 @@
 		add_underlay(T, node, dir)
 
 /obj/machinery/atmospherics/unary/portables_connector/process_atmos()
-	..()
 	if(!connected_device)
 		return 0
 	parent.update = 1
@@ -43,3 +43,4 @@
 	return connected_device.portableConnectorReturnAir()
 
 /obj/proc/portableConnectorReturnAir()
+	return

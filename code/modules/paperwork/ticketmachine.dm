@@ -43,6 +43,7 @@
 		qdel(ticket)
 	tickets.Cut()
 	update_icon()
+	return TRUE
 
 /obj/machinery/ticket_machine/Initialize(mapload)
 	. = ..()
@@ -77,7 +78,7 @@
 /obj/machinery/door_control/ticket_machine_button/attack_hand(mob/user)
 	if(allowed(usr) || user.can_advanced_admin_interact())
 		icon_state = "doorctrl1"
-		addtimer(CALLBACK(src, /atom/.proc/update_icon), 15)
+		addtimer(CALLBACK(src, TYPE_PROC_REF(/atom, update_icon)), 15)
 		for(var/obj/machinery/ticket_machine/M in GLOB.machines)
 			if(M.id == id)
 				if(cooldown)
@@ -179,7 +180,7 @@
 	tickets += theirticket
 	if(emagged) //Emag the machine to destroy the HOP's life.
 		ready = FALSE
-		addtimer(CALLBACK(src, .proc/reset_cooldown), cooldown)//Small cooldown to prevent piles of flaming tickets
+		addtimer(CALLBACK(src, PROC_REF(reset_cooldown)), cooldown)//Small cooldown to prevent piles of flaming tickets
 		theirticket.fire_act()
 		user.drop_item()
 		user.adjust_fire_stacks(1)
@@ -214,9 +215,9 @@
 
 /obj/item/ticket_machine_ticket/attackby(obj/item/P, mob/living/carbon/human/user, params) //Stolen from papercode
 	..()
-	if(is_hot(P))
+	if(P.get_heat())
 		if(HAS_TRAIT(user, TRAIT_CLUMSY) && prob(10))
-			user.visible_message("<span class='warning'>[user] accidentally ignites [user.p_them()]self!</span>", \
+			user.visible_message("<span class='warning'>[user] accidentally ignites [user.p_themselves()]!</span>", \
 								"<span class='userdanger'>You miss the paper and accidentally light yourself on fire!</span>")
 			user.drop_item()
 			user.adjust_fire_stacks(1)

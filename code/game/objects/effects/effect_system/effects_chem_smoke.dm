@@ -75,7 +75,7 @@
 		var/area/A = get_area(location)
 
 		var/where = "[A.name] | [location.x], [location.y]"
-		var/whereLink = "<A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=[location.x];Y=[location.y];Z=[location.z]'>[where]</a>"
+		var/whereLink = "<A href='byond://?_src_=holder;adminplayerobservecoodjump=1;X=[location.x];Y=[location.y];Z=[location.z]'>[where]</a>"
 
 		if(carry && carry.my_atom)
 			if(carry.my_atom.fingerprintslast)
@@ -106,7 +106,7 @@
 				new /obj/effect/particle_effect/chem_smoke(location, color)
 
 		if(x % 10 == 0) //Once every 10 ticks.
-			INVOKE_ASYNC(src, .proc/SmokeEm, effect_range)
+			INVOKE_ASYNC(src, PROC_REF(SmokeEm), effect_range)
 
 		sleep(1)
 	qdel(src)
@@ -120,7 +120,32 @@
 			continue
 		smoked_atoms += A
 		chemholder.reagents.reaction(A)
+		SEND_SIGNAL(A, COMSIG_ATOM_EXPOSE_REAGENTS, chemholder.reagents, chemholder, chemholder.reagents.total_volume)
 		if(iscarbon(A))
 			var/mob/living/carbon/C = A
 			if(C.can_breathe_gas())
 				chemholder.reagents.copy_to(C, chemholder.reagents.total_volume)
+
+/datum/effect_system/smoke_spread/chem/plant
+
+/datum/effect_system/smoke_spread/chem/plant/SmokeEm(effect_range)
+	var/list/mobs_to_smoke = list()
+	for(var/atom/A in view(effect_range, get_turf(location)))
+		if(istype(A, /obj/effect/particle_effect)) // Don't impact particle effects, as there can be hundreds of them in a small area. Also, we don't want smoke particles adding themselves to this list. Major performance issue.
+			continue
+		if(A in smoked_atoms)
+			continue
+		smoked_atoms += A
+		chemholder.reagents.reaction(A)
+		SEND_SIGNAL(A, COMSIG_ATOM_EXPOSE_REAGENTS, chemholder.reagents, chemholder, chemholder.reagents.total_volume)
+		if(iscarbon(A))
+			mobs_to_smoke += A
+
+	if(!length(mobs_to_smoke))
+		return
+
+	var/percentage_to_add = chemholder.reagents.total_volume / length(mobs_to_smoke)
+
+	for(var/mob/living/carbon/smoker as anything in mobs_to_smoke)
+		if(smoker.can_breathe_gas())
+			chemholder.reagents.copy_to(smoker, percentage_to_add)

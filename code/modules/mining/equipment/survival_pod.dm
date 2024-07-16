@@ -4,6 +4,7 @@
 	requires_power = FALSE
 	has_gravity = TRUE
 	dynamic_lighting = DYNAMIC_LIGHTING_FORCED
+	ambientsounds = MINING_SOUNDS
 
 /obj/item/survivalcapsule
 	name = "bluespace shelter capsule"
@@ -20,8 +21,7 @@
 	if(!emagged)
 		to_chat(usr, "<span class='warning'>You short out the safeties, allowing it to be placed in the station sector.</span>")
 		emagged = TRUE
-		return
-
+		return TRUE
 	to_chat(usr, "<span class='warning'>The safeties are already shorted out!</span>")
 
 /obj/item/survivalcapsule/proc/get_template()
@@ -41,17 +41,18 @@
 /obj/item/survivalcapsule/attack_self()
 	// Can't grab when capsule is New() because templates aren't loaded then
 	get_template()
-	if(used == FALSE)
-		var/turf/UT = get_turf(usr)
-		if((UT.z == level_name_to_num(MAIN_STATION)) && !emagged)
-			to_chat(usr, "<span class='notice'>Error. Deployment was attempted on the station sector. Deployment aborted.</span>")
-			playsound(usr, 'sound/machines/terminal_error.ogg', 15, TRUE)
-			return
+	if(!used)
 		loc.visible_message("<span class='warning'>[src] begins to shake. Stand back!</span>")
 		used = TRUE
 		sleep(50)
 		var/turf/deploy_location = get_turf(src)
 		var/status = template.check_deploy(deploy_location)
+		var/turf/UT = get_turf(usr)
+		if((UT.z == level_name_to_num(MAIN_STATION)) && !emagged)
+			to_chat(usr, "<span class='notice'>Error. Deployment was attempted on the station sector. Deployment aborted.</span>")
+			playsound(usr, 'sound/machines/terminal_error.ogg', 15, TRUE)
+			used = FALSE
+			return
 		switch(status)
 			if(SHELTER_DEPLOY_BAD_AREA)
 				loc.visible_message("<span class='warning'>[src] will not function in this area.</span>")
@@ -68,7 +69,7 @@
 
 		var/turf/T = deploy_location
 		if(!is_mining_level(T.z))//only report capsules away from the mining/lavaland level
-			message_admins("[key_name_admin(usr)] ([ADMIN_QUE(usr,"?")]) ([ADMIN_FLW(usr,"FLW")]) activated a bluespace capsule away from the mining level! (<A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=[T.x];Y=[T.y];Z=[T.z]'>JMP</a>)")
+			message_admins("[key_name_admin(usr)] ([ADMIN_QUE(usr,"?")]) ([ADMIN_FLW(usr,"FLW")]) activated a bluespace capsule away from the mining level! (<A href='byond://?_src_=holder;adminplayerobservecoodjump=1;X=[T.x];Y=[T.y];Z=[T.z]'>JMP</a>)")
 			log_admin("[key_name(usr)] activated a bluespace capsule away from the mining level at [T.x], [T.y], [T.z]")
 		template.load(deploy_location, centered = TRUE)
 		new /obj/effect/particle_effect/smoke(get_turf(src))
@@ -85,7 +86,7 @@
 //Window
 /obj/structure/window/full/shuttle/survival_pod
 	name = "pod window"
-	icon = 'icons/obj/smooth_structures/pod_window.dmi'
+	icon = 'icons/obj/smooth_structures/windows/pod_window.dmi'
 	icon_state = "pod_window-0"
 	base_icon_state = "pod_window"
 	smoothing_flags = SMOOTH_BITMASK
@@ -110,10 +111,24 @@
 	icon_regular_floor = "podfloor_light"
 	floor_tile = /obj/item/stack/tile/pod/light
 
+/turf/simulated/floor/pod/light/lavaland_air
+	oxygen = LAVALAND_OXYGEN
+	nitrogen = LAVALAND_NITROGEN
+	temperature = LAVALAND_TEMPERATURE
+	atmos_mode = ATMOS_MODE_EXPOSED_TO_ENVIRONMENT
+	atmos_environment = ENVIRONMENT_LAVALAND
+
 /turf/simulated/floor/pod/dark
 	icon_state = "podfloor_dark"
 	icon_regular_floor = "podfloor_dark"
 	floor_tile = /obj/item/stack/tile/pod/dark
+
+/turf/simulated/floor/pod/dark/lavaland_air
+	oxygen = LAVALAND_OXYGEN
+	nitrogen = LAVALAND_NITROGEN
+	temperature = LAVALAND_TEMPERATURE
+	atmos_mode = ATMOS_MODE_EXPOSED_TO_ENVIRONMENT
+	atmos_environment = ENVIRONMENT_LAVALAND
 
 //Door
 /obj/machinery/door/airlock/survival_pod
@@ -167,13 +182,15 @@
 	RefreshParts()
 
 //NanoMed
-/obj/machinery/vending/wallmed/survival_pod
+/obj/machinery/economy/vending/wallmed/survival_pod
 	name = "survival pod medical supply"
 	desc = "Wall-mounted Medical Equipment dispenser. This one seems just a tiny bit smaller."
 	req_access = list()
 
 	products = list(/obj/item/stack/medical/splint = 2)
 	contraband = list()
+
+MAPPING_DIRECTIONAL_HELPERS(/obj/machinery/economy/vending/wallmed/survival_pod, 32, 32)
 
 //Computer
 /obj/item/gps/computer
@@ -223,10 +240,10 @@
 		return
 
 	for(var/i in 1 to 5)
-		var/obj/item/reagent_containers/food/snacks/warmdonkpocket_weak/W = new(src)
+		var/obj/item/food/snacks/warmdonkpocket_weak/W = new(src)
 		load(W)
 	if(prob(50))
-		var/obj/item/storage/pill_bottle/dice/D = new(src)
+		var/obj/item/storage/bag/dice/D = new(src)
 		load(D)
 	else
 		var/obj/item/instrument/guitar/G = new(src)
@@ -241,7 +258,7 @@
 /obj/machinery/smartfridge/survival_pod/accept_check(obj/item/O)
 	return isitem(O)
 
-/obj/machinery/smartfridge/survival_pod/default_unfasten_wrench()
+/obj/machinery/smartfridge/survival_pod/default_unfasten_wrench(mob/user, obj/item/I, time)
 	return FALSE
 
 /obj/machinery/smartfridge/survival_pod/empty
@@ -262,15 +279,15 @@
 	var/buildstackamount = 5
 
 /obj/structure/fans/Initialize(loc)
-	..()
-	air_update_turf(1)
+	. = ..()
+	recalculate_atmos_connectivity()
 
 /obj/structure/fans/Destroy()
 	arbitraryatmosblockingvar = 0
-	air_update_turf(1)
+	recalculate_atmos_connectivity()
 	return ..()
 
-/obj/structure/fans/CanAtmosPass(turf/T)
+/obj/structure/fans/CanAtmosPass(direction)
 	return !arbitraryatmosblockingvar
 
 /obj/structure/fans/deconstruct()
@@ -283,7 +300,7 @@
 	if(istype(W, /obj/item/wrench))
 		playsound(loc, W.usesound, 50, 1)
 		user.visible_message("<span class='warning'>[user] disassembles the fan.</span>", \
-							 "<span class='notice'>You start to disassemble the fan...</span>", "You hear clanking and banging noises.")
+							"<span class='notice'>You start to disassemble the fan...</span>", "You hear clanking and banging noises.")
 		if(do_after(user, 20 * W.toolspeed, target = src))
 			deconstruct()
 			return ..()
@@ -295,6 +312,10 @@
 	density = FALSE
 	icon_state = "fan_tiny"
 	buildstackamount = 2
+
+/obj/structure/fans/tiny/get_superconductivity(direction)
+	// Mostly for stuff on Lavaland.
+	return ZERO_HEAT_TRANSFER_COEFFICIENT
 
 /obj/structure/fans/tiny/invisible
 	name = "air flow blocker"
@@ -326,7 +347,7 @@
 	if(istype(W, /obj/item/wrench))
 		playsound(loc, W.usesound, 50, 1)
 		user.visible_message("<span class='warning'>[user] disassembles [src].</span>", \
-							 "<span class='notice'>You start to disassemble [src]...</span>", "You hear clanking and banging noises.")
+							"<span class='notice'>You start to disassemble [src]...</span>", "You hear clanking and banging noises.")
 		if(do_after(user, 20 * W.toolspeed, target = src))
 			new /obj/item/stack/rods(loc)
 			qdel(src)

@@ -1,9 +1,13 @@
+#define MILLISECONDS *0.01
+
+#define DECISECONDS *1 //the base unit all of these defines are scaled by, because byond uses that as a unit of measurement for some fucking reason
+
 // So you can be all 10 SECONDS
 #define SECONDS *10
 
-#define MINUTES SECONDS*60
+#define MINUTES *600
 
-#define HOURS MINUTES*60
+#define HOURS *36000
 
 #define TICKS *world.tick_lag
 
@@ -25,6 +29,10 @@
 /proc/worldtime2text()
 	return gameTimestamp("hh:mm:ss", world.time)
 
+//Returns the world time in english
+/proc/roundtime2text()
+	return gameTimestamp("hh:mm:ss", world.time - SSticker.time_game_started)
+
 // This is ISO-8601
 // If anything that uses this proc shouldn't be ISO-8601, change that thing, not this proc. This is important for logging.
 /proc/time_stamp()
@@ -36,6 +44,15 @@
 	if(wtime == null)
 		wtime = world.time
 	return time2text(wtime - GLOB.timezoneOffset, format)
+
+/proc/deciseconds_to_time_stamp(deciseconds)
+	if(istext(deciseconds))
+		deciseconds = text2num(deciseconds)
+	var/hour_calc = round(deciseconds / 36000) < 10 ? add_zero(round(deciseconds / 36000), 1) : round(deciseconds / 36000)
+	var/minute_calc = round((deciseconds % 36000) / 600) < 10 ? add_zero(round((deciseconds % 36000) / 600), 1) : round((deciseconds % 36000) / 600)
+	var/second_calc = round(((deciseconds % 36000) % 600) / 10) < 10 ? add_zero(round(((deciseconds % 36000) % 600) / 10), 1) : round(((deciseconds % 36000) % 600) / 10)
+
+	return "[hour_calc]:[minute_calc]:[second_calc]"
 
 // max hh:mm:ss supported
 /proc/timeStampToNum(timestamp)
@@ -52,9 +69,10 @@
 				. += splits[i] SECONDS
 
 /* This is used for displaying the "station time" equivelent of a world.time value
- Calling it with no args will give you the current time, but you can specify a world.time-based value as an argument
- - You can use this, for example, to do "This will expire at [station_time_at(world.time + 500)]" to display a "station time" expiration date
-   which is much more useful for a player)*/
+ * Calling it with no args will give you the current time, but you can specify a world.time-based value as an argument
+ * - You can use this, for example, to do "This will expire at [station_time_at(world.time + 500)]" to display a "station time" expiration date
+ *   which is much more useful for a player)
+ */
 /proc/station_time(time=world.time, display_only=FALSE)
 	return ((((time - SSticker.round_start_time)) + GLOB.gametime_offset) % 864000) - (display_only ? GLOB.timezoneOffset : 0)
 
@@ -105,9 +123,13 @@
 	var/numMinutes = (seconds - numSeconds) / 60
 	return "[numMinutes] [numMinutes > 1 ? "minutes" : "minute"] and [numSeconds] seconds"
 
-//Take a value in seconds and makes it display like a clock
+/// Take a value in seconds and makes it display like a clock. Hours are stripped. (mm:ss)
 /proc/seconds_to_clock(seconds as num)
 	return "[add_zero(num2text((seconds / 60) % 60), 2)]:[add_zero(num2text(seconds % 60), 2)]"
+
+/// Take a value in seconds and makes it display like a clock (h:mm:ss)
+/proc/seconds_to_full_clock(seconds as num)
+	return "[round(seconds / 3600)]:[add_zero(num2text((seconds / 60) % 60), 2)]:[add_zero(num2text(seconds % 60), 2)]"
 
 //Takes a value of time in deciseconds.
 //Returns a text value of that number in hours, minutes, or seconds.

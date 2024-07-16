@@ -6,7 +6,7 @@
 	item_state = "pen"
 	var/pointer_icon_state
 	flags = CONDUCT
-	slot_flags = SLOT_BELT
+	slot_flags = SLOT_FLAG_BELT
 	materials = list(MAT_METAL=500, MAT_GLASS=500)
 	w_class = WEIGHT_CLASS_SMALL //Increased to 2, because diodes are w_class 2. Conservation of matter.
 	origin_tech = "combat=1;magnets=2"
@@ -56,14 +56,14 @@
 		else
 			to_chat(user, "<span class='notice'>[src] already has a cell.</span>")
 
-	else if(istype(W, /obj/item/screwdriver))
-		if(diode)
-			to_chat(user, "<span class='notice'>You remove [diode] from [src].</span>")
-			diode.loc = get_turf(src.loc)
-			diode = null
-			return
-		..()
-	return
+/obj/item/laser_pointer/screwdriver_act(mob/living/user, obj/item/I)
+	if(!diode)
+		return
+
+	to_chat(user, "<span class='notice'>You remove [diode] from [src].</span>")
+	diode.forceMove(get_turf(loc))
+	diode = null
+	return TRUE
 
 /obj/item/laser_pointer/afterattack(atom/target, mob/living/user, flag, params)
 	if(flag)	//we're placing the object on a table or in backpack
@@ -107,7 +107,7 @@
 				severity = 0
 
 			//20% chance to actually hit the eyes
-			if(prob(effectchance * diode.rating) && C.flash_eyes(severity))
+			if(prob(effectchance * diode.rating) && C.flash_eyes(severity, laser_pointer = TRUE))
 				outmsg = "<span class='notice'>You blind [C] by shining [src] in [C.p_their()] eyes.</span>"
 			else
 				outmsg = "<span class='warning'>You fail to blind [C] by shining [src] at [C.p_their()] eyes!</span>"
@@ -117,8 +117,7 @@
 		var/mob/living/silicon/S = target
 		//20% chance to actually hit the sensors
 		if(prob(effectchance * diode.rating))
-			S.flash_eyes(affect_silicon = 1)
-			S.Weaken(rand(10 SECONDS, 20 SECONDS))
+			S.flash_eyes(affect_silicon = TRUE)
 			to_chat(S, "<span class='warning'>Your sensors were overloaded by a laser!</span>")
 			outmsg = "<span class='notice'>You overload [S] by shining [src] at [S.p_their()] sensors.</span>"
 

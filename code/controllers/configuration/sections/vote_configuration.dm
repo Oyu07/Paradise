@@ -1,6 +1,6 @@
 /// Config holder for stuff relating to the ingame vote system
 /datum/configuration_section/vote_configuration
-	/// How long will a vote last for (deciseconds)
+	/// How long will a vote last for in deciseconds
 	var/vote_time = 60 SECONDS // 60 seconds
 	/// Time before the first shuttle vote (deciseconds)
 	var/autotransfer_initial_time = 2 HOURS // 2 hours
@@ -14,6 +14,8 @@
 	var/enable_map_voting = FALSE
 	/// If TRUE, you will not be able to vote for the current map
 	var/non_repeating_maps = TRUE
+	/// Dictionary of day number (string) to vote string
+	var/list/map_vote_day_types = list()
 
 /datum/configuration_section/vote_configuration/load_data(list/data)
 	// Use the load wrappers here. That way the default isnt made 'null' if you comment out the config line
@@ -25,3 +27,10 @@
 	CONFIG_LOAD_NUM(vote_time, data["vote_time"])
 	CONFIG_LOAD_NUM(autotransfer_initial_time, data["autotransfer_initial_time"])
 	CONFIG_LOAD_NUM(autotransfer_interval_time, data["autotransfer_interval_time"])
+
+	// Load map vote data
+	if(islist(data["map_vote_day_types"]))
+		map_vote_day_types.Cut()
+		for(var/list/kvset in data["map_vote_day_types"])
+			map_vote_day_types["[kvset["day_number"]]"] = kvset["rotation_type"]
+
