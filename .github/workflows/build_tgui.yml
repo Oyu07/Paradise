@@ -54,7 +54,6 @@ jobs:
           ref: ${{ env.PR_BRANCH }}
           token: ${{ env.GH_TOKEN }}
 
-
       - name: Enable Corepack
         run: corepack enable
       - name: Setup Node LTS
@@ -63,8 +62,8 @@ jobs:
           node-version: 'lts/*'
           cache: 'yarn'
 
-# Copied from build_rust.yml
-# Needs to be checked by headcoder for token and bot usage
+      # Copied from build_rust.yml
+      # Needs to be checked by headcoder for token and bot usage
       - name: Build TGUI
         env:
           BASE_BRANCH: ${{ github.event.repository.default_branch }}
@@ -82,3 +81,12 @@ jobs:
           cd ./tgui
           yarn install --immutable
           cd tgui && bin/tgui --mode=production
+
+          # And commit
+          git commit -a -m "update TGUI bundle" --allow-empty
+          git push origin
+
+      - name: Notify Failure
+        if: failure() && env.FAIL_NOTIFIED != 'true'
+        run: |
+          gh pr comment ${{ github.event.issue.html_url }} -b 'Building TGUI bundle failed, see the action run log for details: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
